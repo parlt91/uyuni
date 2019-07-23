@@ -359,33 +359,33 @@ class PackageStates extends React.Component {
         {messages}
         <InnerPanel title={t("Package States")} icon="spacewalk-icon-package-add" buttons={buttons} >
         <div className="row">
-          <div className="panel panel-default">
-            <div className="panel-body">
-                <div className="row">
-                    <span className="col-md-8 pull-right">
-                        <span className="input-group">
-                            <TextField id="package-search" value={this.state.filter} placeholder={t("Search package")} onChange={this.onSearchChange} onPressEnter={this.triggerSearch}/>
-                            <span className="input-group-btn">
-                                <AsyncButton id="search" text={t("Search")} action={this.search} ref={(c) => this.searchButton = c}/>
-                                <button id="system" className={this.state.view == "system" ? "btn btn-success" : "btn btn-default"} onClick={this.setView("system")}>{t("System")}</button>
-                                <button id="changes" className={this.state.view == "changes" ? "btn btn-success" : "btn btn-default"} disabled={this.state.changed.size == 0} onClick={this.setView("changes")}>
-                                    {this.state.changed.size > 0 ? this.state.changed.size : t("No")} {t("Changes")}
-                                </button>
-                            </span>
-                        </span>
-                    </span>
-                </div>
-                <table className="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>{t("Package Name")}</th>
-                      <th>{t("State")}</th>
-                    </tr>
-                  </thead>
-                  {this.tableBody()}
-                </table>
-              </div>
-          </div>
+          <span className="col-md-8 pull-right">
+              <span className="input-group">
+                  <TextField id="package-search" value={this.state.filter} placeholder={t("Search package")}
+                             onChange={this.onSearchChange} onPressEnter={this.triggerSearch}/>
+                  <span className="input-group-btn">
+                      <AsyncButton id="search" text={t("Search")} action={this.search}
+                                   ref={(c) => this.searchButton = c}/>
+                      <button id="system"
+                              className={this.state.view == "system" ? "btn btn-success" : "btn btn-default"}
+                              onClick={this.setView("system")}>{t("System")}</button>
+                      <button id="changes"
+                              className={this.state.view == "changes" ? "btn btn-success" : "btn btn-default"}
+                              disabled={this.state.changed.size == 0} onClick={this.setView("changes")}>
+                          {this.state.changed.size > 0 ? this.state.changed.size : t("No")} {t("Changes")}
+                      </button>
+                  </span>
+              </span>
+          </span>
+          <table className="table table-striped">
+            <thead>
+            <tr>
+              <th>{t("Package Name")}</th>
+              <th>{t("State")}</th>
+            </tr>
+            </thead>
+            {this.tableBody()}
+          </table>
         </div>
       </InnerPanel>
       </div>
