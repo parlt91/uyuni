@@ -352,7 +352,7 @@ class PackageStates extends React.Component {
           : null;
     const buttons = [
               <AsyncButton id="save" action={this.save} text={t("Save")} disabled={this.state.changed.size == 0}/>,
-              <AsyncButton id="apply" action={this.applyPackageState} text={t("Apply")} />
+              <AsyncButton id="apply" action={this.applyPackageState} text={t("Apply")} disabled={this.state.changed.size > 0}/>
     ];
 
     return (
