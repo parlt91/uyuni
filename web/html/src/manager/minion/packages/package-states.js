@@ -194,7 +194,7 @@ class PackageStates extends React.Component {
   }
 
   setView(view) {
-    return event => {
+    return () => {
       this.setState({
           view: view
       });
@@ -362,26 +362,26 @@ class PackageStates extends React.Component {
           <div className="row">
             <div className="col-md-4">
               <div className="input-group">
-              <TextField id="package-search" value={this.state.filter} placeholder={t("Search package")}
-                         onChange={this.onSearchChange} onPressEnter={this.triggerSearch} className="form-control"/>
-              <span className="input-group-btn">
+                <TextField id="package-search" value={this.state.filter} placeholder={t("Search package")}
+                           onChange={this.onSearchChange} onPressEnter={this.triggerSearch} className="form-control"/>
+                <span className="input-group-btn">
                     <AsyncButton id="search" text={t("Search")} action={this.search}
                                  ref={(c) => this.searchButton = c}/>
-                  </span>
+                </span>
               </div>
             </div>
             <div className="col-md-6">
             </div>
             <div className="col-md-2">
-              <div className="input-group pull-right">
-                <button id="system"
-                        className={this.state.view == "system" ? "btn btn-success col" : "btn btn-default col"}
-                        onClick={this.setView("system")}>{t("System")}</button>
-                <button id="changes"
-                        className={this.state.view == "changes" ? "btn btn-success col" : "btn btn-default col"}
-                        disabled={this.state.changed.size == 0} onClick={this.setView("changes")}>
-                  {this.state.changed.size > 0 ? this.state.changed.size : t("No")} {t("Changes")}
-                </button>
+              <div className="input-group">
+                <Toggler id={"system"}
+                         text={t("System")}
+                         handler={this.setView("system")}
+                         value={this.state.view == "system"}/>
+                <Toggler id={"changes"}
+                         text={this.state.changed.size > 0 ? this.state.changed.size : t("No") + t(" Changes")}
+                         handler={this.setView("changes")}
+                         value={this.state.view == "changes"}/>
               </div>
             </div>
           </div>
