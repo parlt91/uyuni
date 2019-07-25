@@ -5,6 +5,13 @@
 # Texts and links
 #
 
+def wait_spa_transition(text)
+  repeat_until_timeout(timeout: 10, message: "Error on navigating to '#{text}'") do
+    break if page.has_no_css?('.senna-loading')
+    sleep 0.2
+  end
+end
+
 When(/^I follow "(.*?)" link$/) do |host|
   system_name = get_system_name(host)
   step %(I follow "#{system_name}")
@@ -25,6 +32,7 @@ end
 When(/^I click on "([^"]+)" in row "([^"]+)"$/) do |link, item|
   within(:xpath, "//tr[td[contains(.,'#{item}')]]") do
     click_link_or_button(link)
+    wait_spa_transition(link)
   end
 end
 
@@ -152,6 +160,7 @@ end
 #
 When(/^I click on "([^"]*)"$/) do |text|
   click_button(text, wait: CLICK_TIMEOUT, match: :first)
+  wait_spa_transition(text)
 end
 
 #
@@ -160,6 +169,7 @@ end
 When(/^I click on "([^"]*)" in element "([^"]*)"$/) do |text, element_id|
   within(:xpath, "//div[@id=\"#{element_id}\"]") do
     click_button(text, wait: CLICK_TIMEOUT, match: :first)
+    wait_spa_transition(text)
   end
 end
 
@@ -176,12 +186,14 @@ end
 #
 When(/^I follow "([^"]*)"$/) do |text|
   click_link(text, wait: CLICK_TIMEOUT)
+  wait_spa_transition(text)
 end
 #
 # Click on the first link
 #
 When(/^I follow first "([^"]*)"$/) do |text|
   click_link(text, wait: CLICK_TIMEOUT, match: :first)
+  wait_spa_transition(text)
 end
 
 #
@@ -270,6 +282,7 @@ When(/^I follow the left menu "([^"]*)"$/) do |menu_path|
   end
   # finally go to the target page
   find(:xpath, target_link_path).click
+  wait_spa_transition(target_link_path)
 end
 
 #
@@ -390,6 +403,7 @@ end
 
 When(/^I sign out$/) do
   page.find(:xpath, "//a[@href='/rhn/Logout.do']").click
+  wait_spa_transition('logout')
 end
 
 Then(/^I should not be authorized$/) do
