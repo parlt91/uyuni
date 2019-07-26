@@ -1,6 +1,5 @@
 /* eslint-disable */
 'use strict';
-
 const React = require("react");
 const ReactDOM = require("react-dom");
 const Buttons = require("components/buttons");
@@ -63,8 +62,8 @@ function packageStateKey(packageState) {
 
 class PackageStates extends React.Component {
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     ["init", "tableBody", "handleStateChange", "onSearchChange", "search", "save", "setView", "addChanged",
     "triggerSearch", "applyPackageState"]
     .forEach(method => this[method] = this[method].bind(this));
@@ -81,8 +80,8 @@ class PackageStates extends React.Component {
     this.init();
   }
 
-  init() {
-    Network.get("/rhn/manager/api/states/packages?sid=" + serverId).promise.then(data => {
+  init () {
+    Network.get("/rhn/manager/api/states/packages?sid=" + this.props.serverId).promise.then(data => {
       console.log(data);
       this.setState({
         packageStates: data.map(state => {
@@ -98,14 +97,14 @@ class PackageStates extends React.Component {
     this.searchButton.trigger()
   }
 
-  search() {
+  search () {
     if (this.state.filter === this.state.search.filter) {
         this.setState({
             view: "search"
         });
         return Promise.resolve();
     } else {
-       return Network.get("/rhn/manager/api/states/packages/match?sid=" + serverId + "&target=" + this.state.filter).promise.then(data => {
+       return Network.get("/rhn/manager/api/states/packages/match?sid=" + this.props.serverId + "&target=" + this.state.filter).promise.then(data => {
           console.log(data);
           this.setState({
             view: "search",
@@ -129,7 +128,7 @@ class PackageStates extends React.Component {
     const request = Network.post(
         "/rhn/manager/api/states/packages/save",
         JSON.stringify({
-            sid: serverId,
+            sid: this.props.serverId,
             packageStates: states
         }),
         "application/json"
@@ -166,7 +165,7 @@ class PackageStates extends React.Component {
     return request;
   }
 
-  applyPackageState() {
+  applyPackageState () {
     if (this.state.changed.size > 0) {
         const response = confirm(t("There are unsaved changes. Do you want to proceed ?"))
         if (response == false) {
@@ -177,7 +176,7 @@ class PackageStates extends React.Component {
     const request = Network.post(
         "/rhn/manager/api/states/apply",
         JSON.stringify({
-            id: serverId,
+            id: this.props.serverId,
             type: "SERVER",
             states: ["packages"]
         }),
@@ -187,7 +186,7 @@ class PackageStates extends React.Component {
           console.log("apply action queued:" + data);
           this.setState({
               messages: MessagesUtils.info(<span>{t("Applying the packages states has been ")}
-                  <a href={"/rhn/systems/details/history/Event.do?sid=" + serverId + "&aid=" + data}>{t("scheduled")}</a>
+                  <a href={"/rhn/systems/details/history/Event.do?sid=" + this.props.serverId + "&aid=" + data}>{t("scheduled")}</a>
               </span>)
           });
     });
@@ -402,7 +401,8 @@ class PackageStates extends React.Component {
   }
 }
 
-SpaRenderer.renderNavigationReact(
-  <PackageStates />,
-  document.getElementById('package-states')
-);
+module.exports = {
+  PackageStates
+}
+
+
