@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {PackageStates} from './package-states';
+import PackageStates from './package-states';
 
 window.pageRenderers = window.pageRenderers || {};
 window.pageRenderers.minion = window.pageRenderers.minion || {};

@@ -1,15 +1,15 @@
 /* eslint-disable */
-'use strict';
-const React = require("react");
-const ReactDOM = require("react-dom");
-const Buttons = require("components/buttons");
-const { InnerPanel } = require('components/panels/InnerPanel');
-const Network = require("utils/network");
-const Fields = require("components/fields");
-const Messages = require("components/messages").Messages;
-const MessagesUtils = require("components/messages").Utils;
+import React from "react";
+import Buttons from "components/buttons";
+import {InnerPanel} from 'components/panels/InnerPanel';
+import Network from "utils/network";
+import Fields from "components/fields";
+import {Messages, Utils as MessagesUtils} from "components/messages";
+import {Toggler} from "components/toggler";
+import withPageWrapper from "components/general/with-page-wrapper";
+import {hot} from 'react-hot-loader';
 const SpaRenderer  = require("core/spa/spa-renderer").default;
-const {Toggler} = require("components/toggler");
+const ReactDOM = require("react-dom");
 
 const AsyncButton = Buttons.AsyncButton;
 const TextField = Fields.TextField;
@@ -401,8 +401,5 @@ class PackageStates extends React.Component {
   }
 }
 
-module.exports = {
-  PackageStates
-}
-
+export default hot(module)(withPageWrapper(PackageStates));
 
