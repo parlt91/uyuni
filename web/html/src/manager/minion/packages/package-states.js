@@ -64,9 +64,11 @@ const PackageStates = ({serverId}) => {
     }
   };
 
+  // Use this one only for Select's:
+  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const handleStateChangeEvent = (original) => {
-    return (event) => {
-      const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(event.target.value));
+    return (event, data) => {
+      const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(data));
       const newPackageConstraintId: OptionalValue =
         (newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId);
       console.log("Old PackageStateId:");
@@ -81,9 +83,11 @@ const PackageStates = ({serverId}) => {
     }
   };
 
+  // Use this one only for Select's:
+  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const handleConstraintChangeEvent = (original) => {
-    return (event) => {
-      const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(event.target.value));
+    return (event, data) => {
+      const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(data));
       const key = packageHelpers.packageStateKey(original);
       const currentState: InstalledPackagesObject = changed.get(key);
       const currentPackageStateId: OptionalValue = currentState !== undefined ? currentState.value.packageStateId : original.packageStateId;
@@ -220,12 +224,13 @@ const PackageStates = ({serverId}) => {
 
     if (currentState.packageStateId === packageHelpers.INSTALLED) {
       versionConstraintSelect =
-        <select id={currentState.name + "-version-constraint"} className="form-control"
+        <Select id={currentState.name + "-version-constraint"}
+                className="form-control"
                 value={packageHelpers.versionConstraints2selectValue(currentState.versionConstraintId)}
                 onChange={handleConstraintChangeEvent(row.original)}>
           <option value="0">{t("Latest")}</option>
           <option value="1">{t("Any")}</option>
-        </select>;
+        </Select>;
     }
 
     // TODO: Just disable the button
@@ -237,13 +242,15 @@ const PackageStates = ({serverId}) => {
     return (
       <div className="row">
         <div className={"col-md-3"}>
-          <select key={currentState.name} id={currentState.name + "-pkg-state"} className="form-control"
+          <Select key={currentState.name}
+                  id={currentState.name + "-pkg-state"}
+                  className="form-control"
                   value={packageHelpers.packageState2selectValue(currentState.packageStateId)}
                   onChange={handleStateChangeEvent(row.original)}>
             <option value="-1">{t("Unmanaged")}</option>
             <option value="0">{t("Installed")}</option>
             <option value="1">{t("Removed")}</option>
-          </select>
+          </Select>
         </div>
         <div className={"col-md-3"}>
           {versionConstraintSelect}
