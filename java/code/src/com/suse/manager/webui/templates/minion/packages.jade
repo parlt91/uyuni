@@ -4,7 +4,6 @@ include ./minion-header.jade
 
 script(type='text/javascript').
     window.csrfToken = "#{csrf_token}";
-    window.serverId = "#{server.id}";
 script(src='/javascript/manager/minion/packages/package-states.renderer.bundle.js?cb=#{webVersion}', type='text/javascript')
 
 script(type='text/javascript').

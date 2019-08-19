@@ -3,7 +3,7 @@ import Network from "utils/network";
 import React, {useState} from "react";
 import {Utils as MessagesUtils} from "components/messages";
 import type {
-  InstalledPackagesObject,
+  ChangesMapObject,
   UninstalledPackage,
   InstalledPackage,
 } from "./package.type";
@@ -24,21 +24,22 @@ const usePackageStatesApi = () => {
   function fetchPackageStatesApi(apiAction: string,
                                  serverId: string,
                                  filter: string = "",
-                                 toSave: Map<string, InstalledPackagesObject> =
-                                   new Map<string, InstalledPackagesObject>()): Promise<any> {
+                                 toSave: Array<InstalledPackage> = [],
+                                 changed: ChangesMapObject = {}): Promise<any> {
     if (apiAction === action.SAVE) {
       console.log("Save posted");
       return Network.post(
         "/rhn/manager/api/states/packages/save",
         JSON.stringify({
           sid: serverId,
-          packageStates: Array.from(toSave.values())
+          packageStates: toSave
         }),
         "application/json"
       ).promise
-        .then((data: any) => {
-            console.log("success: " + data);
-            updateAfterSave(data, toSave);
+        .then((data: Array<InstalledPackage>) => {
+            console.log("success: (data in next line)");
+            console.log(data);
+            updateAfterSave(data, changed);
             setMessages(MessagesUtils.info(t('Package states have been saved.')));
           }
         )
@@ -72,6 +73,7 @@ const usePackageStatesApi = () => {
         "/rhn/manager/api/states/packages/match?sid=" + serverId + "&target=" + filter
       ).promise
         .then((data: Array<InstalledPackage | UninstalledPackage>) => {
+          console.log("Search Results:");
           console.log(data);
           updateAfterSearch(data);
           return null;
@@ -98,20 +100,21 @@ const usePackageStatesApi = () => {
     setPackageStates(newPackageStates);
   }
 
-  function updateAfterSave(newServerPackages: Array<InstalledPackage>, changed: Map<string, InstalledPackagesObject>) {
+  function updateAfterSave(newServerPackages: Array<InstalledPackage>, changed: ChangesMapObject): void {
     const newPackageStates: any = newServerPackages.map((state: InstalledPackage) => {
       state.packageStateId = packageHelpers.normalizePackageState(state.packageStateId);
       return state;
     });
     const newSearchResults =
-      searchResults.map<Map<string, InstalledPackagesObject | UninstalledPackage>>((state: InstalledPackage | UninstalledPackage) => {
-      const tempchanged = changed.get(packageHelpers.packageStateKey(state));
-      if (tempchanged !== undefined) {
-        return tempchanged.value;
-      } else {
-        return state;
-      }
-    });
+      searchResults.map<InstalledPackage | UninstalledPackage>((state: InstalledPackage | UninstalledPackage) => {
+        const key = packageHelpers.packageStateKey(state);
+        const tempchanged = changed[key];
+        if (tempchanged !== undefined && typeof tempchanged.value === 'object') {
+          return tempchanged.value;
+        } else {
+          return state;
+        }
+      });
     setPackageStates(newPackageStates);
     setSearchResults(newSearchResults);
   }

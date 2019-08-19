@@ -1,5 +1,9 @@
 // @flow
 
+export type ChangesMapObject = {
+  [key: string]: InstalledPackagesObject
+}
+
 export type InstalledPackagesObject = {
   original: InstalledPackage,
   value?: InstalledPackage,

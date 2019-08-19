@@ -1,5 +1,5 @@
 //@flow
-import type {InstalledPackage, OptionalValue, UninstalledPackage} from "./package.type";
+import type {InstalledPackage, InstalledPackagesObject, OptionalValue, UninstalledPackage} from "./package.type";
 
 const UNMANAGED = {};
 const INSTALLED: OptionalValue = {value: 0};
@@ -8,6 +8,32 @@ const PURGED: OptionalValue = {value: 2};
 
 const LATEST: OptionalValue = {value: 0};
 const ANY: OptionalValue = {value: 1};
+
+const emptyInstalledPackagesObject: InstalledPackagesObject = {
+  original: {
+    arch: "",
+    epoch: "",
+    name: "",
+    packageStateId: {},
+    release: "",
+    version: "",
+    versionConstraintId: {}
+  },
+  value: {
+    arch: "",
+    epoch: "",
+    name: "",
+    packageStateId: {},
+    release: "",
+    version: "",
+    versionConstraintId: {}
+  }
+};
+
+const getOrDefault = <K, V>(map: Map<K, V>, key: K, defaultValue: V): V => {
+  const val: V | void = map.get(key);
+  return val == null ? defaultValue : val
+};
 
 function selectValue2PackageState(value: number): OptionalValue {
   switch (value) {
@@ -51,8 +77,11 @@ function selectValue2VersionConstraints(value: number): OptionalValue {
   }
 }
 
-function packageStateKey(packageState: InstalledPackage | UninstalledPackage): string{
-  return packageState.name + packageState.version + packageState.release + packageState.epoch + packageState.arch;
+function packageStateKey(packageState: InstalledPackage | UninstalledPackage): string {
+  const version: string = (typeof packageState.version === "string") ? packageState.version : "null";
+  const epoch: string = (typeof packageState.epoch === "string") ? packageState.epoch : "null";
+  const release: string = (typeof packageState.release === "string" && packageState.release) ? packageState.release : "null";
+  return packageState.name + version + release + epoch + packageState.arch;
 }
 
 export {
@@ -62,11 +91,13 @@ export {
   PURGED,
   LATEST,
   ANY,
+  emptyInstalledPackagesObject,
   selectValue2PackageState,
   packageState2selectValue,
   versionConstraints2selectValue,
   normalizePackageState,
   normalizePackageVersionConstraint,
   selectValue2VersionConstraints,
-  packageStateKey
+  packageStateKey,
+  getOrDefault
 }

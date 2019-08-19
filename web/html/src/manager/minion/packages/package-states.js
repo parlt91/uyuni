@@ -1,24 +1,22 @@
 // @flow
 import React, {useEffect, useState, useRef} from "react";
+import {useImmer} from 'use-immer';
 import Buttons from "components/buttons";
 import {InnerPanel} from 'components/panels/InnerPanel';
 import {Select} from 'components/input/Select';
 import Fields from "components/fields";
 import {Messages} from "components/messages";
-import {Toggler} from "components/toggler";
 import withPageWrapper from "components/general/with-page-wrapper";
 import {hot} from 'react-hot-loader';
 import {showErrorToastr} from "../../../components/toastr/toastr";
 import usePackageStatesApi from "./use-package-states.api";
 import type {
+  ChangesMapObject,
   InstalledPackagesObject,
-  UninstalledPackage,
   InstalledPackage,
   OptionalValue
 } from "./package.type";
 import * as packageHelpers from "./package-utils";
-const SpaRenderer  = require("core/spa/spa-renderer").default;
-const ReactDOM = require("react-dom");
 
 const AsyncButton = Buttons.AsyncButton;
 const TextField = Fields.TextField;
@@ -31,11 +29,15 @@ const action = {
 };
 
 const PackageStates = ({serverId}) => {
-  const [filter, setfilter] = useState<string>("");
+  const [filter, setFilter] = useState<string>("");
   const [view, setView] = useState<string>("system");
   const [tableRows, setTableRows] = useState<Array<InstalledPackagesObject>>([]);
-  const [changed, setChanged] =
-    useState<Map<string, InstalledPackagesObject>>(new Map<string, InstalledPackagesObject>());
+  const [changed, setChanged] = useImmer<ChangesMapObject>({});
+
+  useEffect(() => {
+    console.log("Changed changed - New changed under this message");
+    console.log(changed);
+  }, [changed]);
 
   const {
     messages, fetchPackageStatesApi, packageStates, searchResults
@@ -57,24 +59,21 @@ const PackageStates = ({serverId}) => {
   }, [changed, packageStates, searchResults, view]);
 
   const handleUndo = (packageState) => {
-    return () => {
-      const newChanged = changed;
-      newChanged.delete(packageHelpers.packageStateKey(packageState));
-      setChanged(newChanged);
+    return (): void => {
+      setChanged((draft: ChangesMapObject) => {
+        const key = packageHelpers.packageStateKey(packageState);
+        delete draft[key];
+      });
     }
   };
 
   // Use this one only for Select's:
   // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const handleStateChangeEvent = (original) => {
-    return (event, data) => {
+    return (event, data): void => {
       const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(data));
       const newPackageConstraintId: OptionalValue =
         (newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId);
-      console.log("Old PackageStateId:");
-      console.log(original.packageStateId);
-      console.log("New PackageStateId:");
-      console.log(newPackageStateId);
       addChanged(
         original,
         newPackageStateId,
@@ -86,15 +85,12 @@ const PackageStates = ({serverId}) => {
   // Use this one only for Select's:
   // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const handleConstraintChangeEvent = (original) => {
-    return (event, data) => {
+    return (event, data): void => {
       const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(data));
       const key = packageHelpers.packageStateKey(original);
-      const currentState: InstalledPackagesObject = changed.get(key);
-      const currentPackageStateId: OptionalValue = currentState !== undefined ? currentState.value.packageStateId : original.packageStateId;
-      console.log("Old Constrait:");
-      console.log(original.versionConstraintId);
-      console.log("New Constrait:");
-      console.log(newPackageConstraintId);
+      const currentState: InstalledPackagesObject = changed[key];
+      const currentPackageStateId: OptionalValue =
+        (currentState !== undefined && typeof currentState.value === 'object') ? currentState.value.packageStateId : original.packageStateId;
       addChanged(
         original,
         currentPackageStateId,
@@ -105,37 +101,38 @@ const PackageStates = ({serverId}) => {
 
   function addChanged(original: InstalledPackage, newPackageStateId: OptionalValue, newVersionConstraintId: OptionalValue): void {
     const key = packageHelpers.packageStateKey(original);
-    const newChanged = changed;
-    const currentState = newChanged.get(key);
+    console.log("Key(Changed): " + key);
+    const currentState = changed[key];
     if (currentState !== undefined
       && newPackageStateId === currentState.original.packageStateId
       && newVersionConstraintId === currentState.original.versionConstraintId) {
-      newChanged.delete(key);
+      console.log("Delete Key");
+      setChanged((draft: ChangesMapObject) => {
+        delete draft[key];
+      });
     } else {
-      newChanged.set(key, {
-        original: original,
-        value: {
-          arch: original.arch,
-          epoch: original.epoch,
-          version: original.version,
-          release: original.release,
-          name: original.name,
-          packageStateId: newPackageStateId,
-          versionConstraintId: newVersionConstraintId
-        }
+      console.log("Update Key");
+      setChanged(draft => {
+        draft[key] = {
+          original: original,
+          value: {
+            arch: original.arch,
+            epoch: original.epoch,
+            version: original.version,
+            release: original.release,
+            name: original.name,
+            packageStateId: newPackageStateId,
+            versionConstraintId: newVersionConstraintId
+          }
+        };
       });
     }
-    console.log("Old Object:");
-    console.log(changed.get(key));
-    console.log("New Object:");
-    console.log(newChanged.get(key));
-    setChanged(newChanged);
   }
 
   // Use this one only for Select's:
   // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const setUiView = () => {
-    return (event, data) => {
+    return (event, data): void => {
       setView(data);
     }
   };
@@ -156,23 +153,34 @@ const PackageStates = ({serverId}) => {
     });
   };
 
-  const save = () => {
-    return fetchPackageStatesApi(action.SAVE, serverId, "", changed)
+  const save = (): Promise<any> => {
+    const toSave = [];
+    for (const state in changed) {
+      if (typeof changed[state].value === 'object') {
+        toSave.push(changed[state].value)
+      } else {
+        console.log("Cannot save empty object.")
+      }
+    }
+    return fetchPackageStatesApi(action.SAVE, serverId, "", toSave, changed)
       .then(() => {
         setView("system");
-        const newChanged = new Map<string, InstalledPackagesObject>();
-        setChanged(newChanged);
+        setChanged(draft => {
+          return {};
+        });
       }).catch(error => {
         showErrorToastr(error, {autoHide: false});
       });
   };
 
   const buttons = [
-    <AsyncButton id="save" action={save} text={t("Save")} disabled={changed.size === 0}/>,
-    <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")} disabled={changed.size > 0}/>
+    <AsyncButton id="save" action={save} text={t("Save")} disabled={Object.keys(changed).length === 0}
+                 key={"save"}/>,
+    <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
+                 disabled={Object.keys(changed).length > 0} key={"apply"}/>
   ];
 
-  const search = () => {
+  const search = (): Promise<any> => {
     return fetchPackageStatesApi(action.SEARCH, serverId, filter)
       .then(() => {
         setView("search");
@@ -182,37 +190,39 @@ const PackageStates = ({serverId}) => {
       });
   };
 
-  const onSearchChange = (event) => {
-    setfilter(event.target.value);
+  const onSearchChange = (event): void => {
+    setFilter(event.target.value);
   };
 
-  const generateTableData = () => {
+  const generateTableData = (): void => {
     let rows: Array<InstalledPackagesObject> = [];
     if (view === "system") {
-      rows = packageStates.map((state: InstalledPackage) => {
-        const changedPackage = changed.get(packageHelpers.packageStateKey(state));
+      for (const state of packageStates) {
+        const key = packageHelpers.packageStateKey(state);
+        const changedPackage = changed[key];
         if (changedPackage !== undefined) {
-          return changedPackage;
+          rows.push(changedPackage);
         } else {
-          return {
+          rows.push({
             original: state,
-          };
+          });
         }
-      });
+      }
     } else if (view === "search") {
-      rows = searchResults.map((state: InstalledPackage | UninstalledPackage) => {
-        const changedPackage = changed.get(packageHelpers.packageStateKey(state));
-        if (changedPackage !== undefined) {
-          return changedPackage;
-        } else {
-          return {
+      for (const state of searchResults) {
+        const key = packageHelpers.packageStateKey(state);
+        const changedPackage = changed[key];
+        if (changedPackage === undefined) {
+          rows.push({
             original: state,
-          };
+          });
+        } else {
+          rows.push(changedPackage);
         }
-      });
+      }
     } else if (view === "changes") {
-      for (const state of changed.values()) {
-        rows.push(state)
+      for (const state in changed) {
+        rows.push(changed[state])
       }
     }
     setTableRows(rows);
@@ -234,7 +244,8 @@ const PackageStates = ({serverId}) => {
     }
 
     // TODO: Just disable the button
-    if (changed.get(packageHelpers.packageStateKey(currentState)) !== undefined) {
+    const key = packageHelpers.packageStateKey(currentState);
+    if (changed[key] !== undefined) {
       undoButton = <button id={currentState.name + "-undo"} className="btn btn-default"
                            onClick={handleUndo(row.original)}>{t("Undo")}</button>
     }
@@ -259,17 +270,17 @@ const PackageStates = ({serverId}) => {
           {undoButton}
         </div>
       </div>
-      )
+    )
   };
 
   const tableBody = () => {
     const elements = [];
     for (const row of tableRows) {
-      const changed = row.value;
-      const currentState = changed === undefined ? row.original : changed;
+      const currentState = row.value !== undefined ? row.value : row.original;
 
       elements.push(
-        <tr key={currentState.name} id={currentState.name + "-row"} className={changed !== undefined ? "warning" : ""}>
+        <tr key={currentState.name} id={currentState.name + "-row"}
+            className={row.value !== undefined ? "warning" : ""}>
           <td key={currentState.name}>{t(currentState.name)}</td>
           <td>
             {renderState(row, currentState)}
@@ -292,7 +303,7 @@ const PackageStates = ({serverId}) => {
 
   const searchRef = useRef<AsyncButton>();
 
-  const triggerSearch = () => {
+  const triggerSearch = (): void => {
     searchRef.current.trigger()
   };
 
@@ -309,21 +320,20 @@ const PackageStates = ({serverId}) => {
         <TextField id="package-search" value={filter} placeholder={t("Search package")}
                    onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
         <span className="input-group-btn">
-                    <AsyncButton id="search" text={t("Search")} action={search}
-                                 ref={searchRef}/>
-                </span>
+          <AsyncButton id="search" text={t("Search")} action={search} ref={searchRef} key={"searchButton"}/>
+        </span>
       </div>
     )
   };
 
   const renderChanges = () => {
-    if (changed.size === 1) {
+    if (Object.keys(changed).length === 1) {
       return (
         <p>{t("There is 1 unsaved change")}</p>
       )
     }
     return (
-      <p>{t("There are ")}{changed.size}{t(" unsaved changes")}</p>
+      <p>{t("There are ")}{Object.keys(changed).length}{t(" unsaved changes")}</p>
     )
   };
 
