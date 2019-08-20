@@ -307,63 +307,59 @@ const PackageStates = ({serverId}) => {
     searchRef.current.trigger()
   };
 
-  const dropdownOptions: Array<{ key: string, value: string, show: string }> =
-    [
-      {key: "system", value: "system", show: "System"},
-      {key: "changes", value: "changes", show: "Changes"},
-      {key: "search", value: "search", show: "Search"}
-    ];
-
   const renderSearchBar = () => {
     return (
-      <div className="input-group">
-        <TextField id="package-search" value={filter} placeholder={t("Search package")}
-                   onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
-        <span className="input-group-btn">
+      <div className={"row"}>
+        <div className={"col-md-5"}>
+          <div style={{paddingBottom: 0.7 + 'em'}}>
+            <div className="input-group">
+              <TextField id="package-search" value={filter} placeholder={t("Search package")}
+                         onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
+              <span className="input-group-btn">
           <AsyncButton id="search" text={t("Search")} action={search} ref={searchRef} key={"searchButton"}/>
         </span>
+            </div>
+          </div>
+        </div>
       </div>
     )
   };
 
-  const renderChanges = () => {
-    if (Object.keys(changed).length === 1) {
-      return (
-        <p>{t("There is 1 unsaved change")}</p>
-      )
+  const changeTabUrl = (currentTab) => {
+    setView(currentTab);
+  };
+
+  const headerTabs = () => {
+    const length = Object.keys(changed).length;
+    let changesText = t('Changes');
+    if (length === 1) {
+      changesText = t('1 Change');
+    } else if (length > 1) {
+      changesText = length + ' ' + t('Changes');
     }
+
     return (
-      <p>{t("There are ")}{Object.keys(changed).length}{t(" unsaved changes")}</p>
-    )
+      <div className="spacewalk-content-nav">
+        <ul className="nav nav-tabs">
+          <li className={view === 'search' || view === '' ? 'active' : ''}>
+            <a href='#search' onClick={() => changeTabUrl('search')}>{t('Search')}</a>
+          </li>
+          <li className={view === 'changes' ? 'active' : ''}>
+            <a href='#changes' onClick={() => changeTabUrl('changes')}>{changesText}</a>
+          </li>
+          <li className={view === 'system' ? 'active' : ''}>
+            <a href='#system' onClick={() => changeTabUrl('system')}>{t('System')}</a>
+          </li>
+        </ul>
+      </div>)
   };
 
   return (
     <div>
       {messages ? <Messages items={messages}/> : null}
-      <InnerPanel title={t("Package States")} icon="spacewalk-icon-package-add">
-        <div className={"form-horizontal"}>
-          <div className="col-md-4">
-            {view === "search" ? renderSearchBar() : null}
-          </div>
-          <div className="col-md-3">
-            {renderChanges()}
-          </div>
-          <div className="col-md-2 btn-group">
-            <div className={"pull-right"}>
-              {buttons.map(button => button)}
-            </div>
-          </div>
-          <Select
-            name={"viewSelector"}
-            label={t("Choose View")}
-            divClass={"col-md-2"}
-            labelClass={"col-md-1"}
-            defaultValue={dropdownOptions[0].key}
-            onChange={setUiView()}
-          >
-            {dropdownOptions.map(option => <option key={option.key} value={option.value}>{t(option.show)}</option>)}
-          </Select>
-        </div>
+      <InnerPanel title={t("Package States")} icon="spacewalk-icon-package-add" buttons={buttons}>
+        {headerTabs()}
+        {view === "search" ? renderSearchBar() : null}
         <div className="row">
           <table className="table table-striped">
             <thead>
