@@ -2,6 +2,7 @@
 import React, {useEffect, useState, useRef} from "react";
 import Buttons from "components/buttons";
 import {InnerPanel} from 'components/panels/InnerPanel';
+import {Select} from 'components/input/Select';
 import Fields from "components/fields";
 import {Messages} from "components/messages";
 import {Toggler} from "components/toggler";
@@ -68,6 +69,10 @@ const PackageStates = ({serverId}) => {
       const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(event.target.value));
       const newPackageConstraintId: OptionalValue =
         (newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId);
+      console.log("Old PackageStateId:");
+      console.log(original.packageStateId);
+      console.log("New PackageStateId:");
+      console.log(newPackageStateId);
       addChanged(
         original,
         newPackageStateId,
@@ -80,8 +85,12 @@ const PackageStates = ({serverId}) => {
     return (event) => {
       const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(event.target.value));
       const key = packageHelpers.packageStateKey(original);
-      const currentState: any = changed.get(key);
-      const currentPackageStateId: any = currentState !== undefined ? currentState.value.packageStateId : original.packageStateId;
+      const currentState: InstalledPackagesObject = changed.get(key);
+      const currentPackageStateId: OptionalValue = currentState !== undefined ? currentState.value.packageStateId : original.packageStateId;
+      console.log("Old Constrait:");
+      console.log(original.versionConstraintId);
+      console.log("New Constrait:");
+      console.log(newPackageConstraintId);
       addChanged(
         original,
         currentPackageStateId,
@@ -112,12 +121,18 @@ const PackageStates = ({serverId}) => {
         }
       });
     }
+    console.log("Old Object:");
+    console.log(changed.get(key));
+    console.log("New Object:");
+    console.log(newChanged.get(key));
     setChanged(newChanged);
   }
 
-  const setUiView = (view) => {
-    return () => {
-      setView(view);
+  // Use this one only for Select's:
+  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
+  const setUiView = () => {
+    return (event, data) => {
+      setView(data);
     }
   };
 
@@ -150,7 +165,7 @@ const PackageStates = ({serverId}) => {
 
   const buttons = [
     <AsyncButton id="save" action={save} text={t("Save")} disabled={changed.size === 0}/>,
-    <AsyncButton id="apply" action={applyPackageState} text={t("Apply")} disabled={changed.size > 0}/>
+    <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")} disabled={changed.size > 0}/>
   ];
 
   const search = () => {
@@ -199,44 +214,58 @@ const PackageStates = ({serverId}) => {
     setTableRows(rows);
   };
 
+  const renderState = (row, currentState) => {
+    let versionConstraintSelect = null;
+    let undoButton = null;
+
+    if (currentState.packageStateId === packageHelpers.INSTALLED) {
+      versionConstraintSelect =
+        <select id={currentState.name + "-version-constraint"} className="form-control"
+                value={packageHelpers.versionConstraints2selectValue(currentState.versionConstraintId)}
+                onChange={handleConstraintChangeEvent(row.original)}>
+          <option value="0">{t("Latest")}</option>
+          <option value="1">{t("Any")}</option>
+        </select>;
+    }
+
+    // TODO: Just disable the button
+    if (changed.get(packageHelpers.packageStateKey(currentState)) !== undefined) {
+      undoButton = <button id={currentState.name + "-undo"} className="btn btn-default"
+                           onClick={handleUndo(row.original)}>{t("Undo")}</button>
+    }
+
+    return (
+      <div className="row">
+        <div className={"col-md-3"}>
+          <select key={currentState.name} id={currentState.name + "-pkg-state"} className="form-control"
+                  value={packageHelpers.packageState2selectValue(currentState.packageStateId)}
+                  onChange={handleStateChangeEvent(row.original)}>
+            <option value="-1">{t("Unmanaged")}</option>
+            <option value="0">{t("Installed")}</option>
+            <option value="1">{t("Removed")}</option>
+          </select>
+        </div>
+        <div className={"col-md-3"}>
+          {versionConstraintSelect}
+        </div>
+        <div className={"col-md-3"}>
+          {undoButton}
+        </div>
+      </div>
+      )
+  };
+
   const tableBody = () => {
     const elements = [];
     for (const row of tableRows) {
       const changed = row.value;
       const currentState = changed === undefined ? row.original : changed;
 
-      let versionConstraintSelect = null;
-      let undoButton = null;
-
-      if (currentState.packageStateId === packageHelpers.INSTALLED) {
-        versionConstraintSelect =
-          <select id={currentState.name + "-version-constraint"} className="form-control"
-                  value={packageHelpers.versionConstraints2selectValue(currentState.versionConstraintId)}
-                  onChange={handleConstraintChangeEvent(row.original)}>
-            <option value="0">{t("Latest")}</option>
-            <option value="1">{t("Any")}</option>
-          </select>;
-      }
-      if (changed !== undefined) {
-        undoButton = <button id={currentState.name + "-undo"} className="btn btn-default"
-                             onClick={handleUndo(row.original)}>{t("Undo")}</button>
-      }
-
       elements.push(
         <tr key={currentState.name} id={currentState.name + "-row"} className={changed !== undefined ? "warning" : ""}>
           <td key={currentState.name}>{t(currentState.name)}</td>
           <td>
-            <div className="form-group">
-              <select key={currentState.name} id={currentState.name + "-pkg-state"} className="form-control"
-                      value={packageHelpers.packageState2selectValue(currentState.packageStateId)}
-                      onChange={handleStateChangeEvent(row.original)}>
-                <option value="-1">{t("Unmanaged")}</option>
-                <option value="0">{t("Installed")}</option>
-                <option value="1">{t("Removed")}</option>
-              </select>
-              {versionConstraintSelect}
-              {undoButton}
-            </div>
+            {renderState(row, currentState)}
           </td>
         </tr>
       );
@@ -260,35 +289,63 @@ const PackageStates = ({serverId}) => {
     searchRef.current.trigger()
   };
 
-  return (
-    <div>
-      {messages ? <Messages items={messages}/> : null}
-      <InnerPanel title={t("Package States")} icon="spacewalk-icon-package-add" buttons={buttons}>
-        <div className="row">
-          <div className="col-md-4">
-            <div className="input-group">
-              <TextField id="package-search" value={filter} placeholder={t("Search package")}
-                         onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
-              <span className="input-group-btn">
+  const dropdownOptions: Array<{ key: string, value: string, show: string }> =
+    [
+      {key: "system", value: "system", show: "System"},
+      {key: "changes", value: "changes", show: "Changes"},
+      {key: "search", value: "search", show: "Search"}
+    ];
+
+  const renderSearchBar = () => {
+    return (
+      <div className="input-group">
+        <TextField id="package-search" value={filter} placeholder={t("Search package")}
+                   onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
+        <span className="input-group-btn">
                     <AsyncButton id="search" text={t("Search")} action={search}
                                  ref={searchRef}/>
                 </span>
+      </div>
+    )
+  };
+
+  const renderChanges = () => {
+    if (changed.size === 1) {
+      return (
+        <p>{t("There is 1 unsaved change")}</p>
+      )
+    }
+    return (
+      <p>{t("There are ")}{changed.size}{t(" unsaved changes")}</p>
+    )
+  };
+
+  return (
+    <div>
+      {messages ? <Messages items={messages}/> : null}
+      <InnerPanel title={t("Package States")} icon="spacewalk-icon-package-add">
+        <div className={"form-horizontal"}>
+          <div className="col-md-4">
+            {view === "search" ? renderSearchBar() : null}
+          </div>
+          <div className="col-md-3">
+            {renderChanges()}
+          </div>
+          <div className="col-md-2 btn-group">
+            <div className={"pull-right"}>
+              {buttons.map(button => button)}
             </div>
           </div>
-          <div className="col-md-6">
-          </div>
-          <div className="col-md-2">
-            <div className="input-group">
-              <Toggler id={"system"}
-                       text={t("System")}
-                       handler={setUiView("system")}
-                       value={view === "system"}/>
-              <Toggler id={"changes"}
-                       text={(changed.size > 0 ? changed.size : t("No")) + t(" Changes")}
-                       handler={setUiView("changes")}
-                       value={view === "changes"}/>
-            </div>
-          </div>
+          <Select
+            name={"viewSelector"}
+            label={t("Choose View")}
+            divClass={"col-md-2"}
+            labelClass={"col-md-1"}
+            defaultValue={dropdownOptions[0].key}
+            onChange={setUiView()}
+          >
+            {dropdownOptions.map(option => <option key={option.key} value={option.value}>{t(option.show)}</option>)}
+          </Select>
         </div>
         <div className="row">
           <table className="table table-striped">
