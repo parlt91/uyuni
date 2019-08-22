@@ -30,11 +30,6 @@ const emptyInstalledPackagesObject: InstalledPackagesObject = {
   }
 };
 
-const getOrDefault = <K, V>(map: Map<K, V>, key: K, defaultValue: V): V => {
-  const val: V | void = map.get(key);
-  return val == null ? defaultValue : val
-};
-
 function selectValue2PackageState(value: number): OptionalValue {
   switch (value) {
     case -1:
@@ -98,6 +93,5 @@ export {
   normalizePackageState,
   normalizePackageVersionConstraint,
   selectValue2VersionConstraints,
-  packageStateKey,
-  getOrDefault
+  packageStateKey
 }

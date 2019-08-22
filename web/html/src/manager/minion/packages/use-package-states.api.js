@@ -37,7 +37,7 @@ const usePackageStatesApi = () => {
         "application/json"
       ).promise
         .then((data: Array<InstalledPackage>) => {
-            console.log("success: (data in next line)");
+            console.log("Save success: (data in next line)");
             console.log(data);
             updateAfterSave(data, changed);
             setMessages(MessagesUtils.info(t('Package states have been saved.')));
@@ -55,6 +55,7 @@ const usePackageStatesApi = () => {
         "application/json"
       ).promise
         .then((data) => {
+          console.log("Apply success");
           setMessages(MessagesUtils.info(<span>{t("Applying the packages states has been ")}
             <a href={"/rhn/systems/details/history/Event.do?sid=" + serverId + "&aid=" + data}>{t("scheduled")}</a>
               </span>));
@@ -65,6 +66,7 @@ const usePackageStatesApi = () => {
         "/rhn/manager/api/states/packages?sid=" + serverId
       ).promise
         .then((data: Array<InstalledPackage>) => {
+          console.log("Successfully got server packages.");
           updateAfterServerGetPackages(data);
         });
     } else if (apiAction === action.SEARCH) {

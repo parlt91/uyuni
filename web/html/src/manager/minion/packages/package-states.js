@@ -34,11 +34,6 @@ const PackageStates = ({serverId}) => {
   const [tableRows, setTableRows] = useState<Array<InstalledPackagesObject>>([]);
   const [changed, setChanged] = useImmer<ChangesMapObject>({});
 
-  useEffect(() => {
-    console.log("Changed changed - New changed under this message");
-    console.log(changed);
-  }, [changed]);
-
   const {
     messages, fetchPackageStatesApi, packageStates, searchResults
   } = usePackageStatesApi();
@@ -49,10 +44,6 @@ const PackageStates = ({serverId}) => {
         showErrorToastr(error, {autoHide: false});
       }));
   }, []);
-
-  useEffect(() => {
-    console.log("View changed to: " + view);
-  }, [view]);
 
   useEffect(() => {
     generateTableData();
@@ -101,17 +92,14 @@ const PackageStates = ({serverId}) => {
 
   function addChanged(original: InstalledPackage, newPackageStateId: OptionalValue, newVersionConstraintId: OptionalValue): void {
     const key = packageHelpers.packageStateKey(original);
-    console.log("Key(Changed): " + key);
     const currentState = changed[key];
     if (currentState !== undefined
       && newPackageStateId === currentState.original.packageStateId
       && newVersionConstraintId === currentState.original.versionConstraintId) {
-      console.log("Delete Key");
       setChanged((draft: ChangesMapObject) => {
         delete draft[key];
       });
     } else {
-      console.log("Update Key");
       setChanged(draft => {
         draft[key] = {
           original: original,
@@ -128,14 +116,6 @@ const PackageStates = ({serverId}) => {
       });
     }
   }
-
-  // Use this one only for Select's:
-  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
-  const setUiView = () => {
-    return (event, data): void => {
-      setView(data);
-    }
-  };
 
   const applyPackageState = () => {
     if (changed.size > 0) {
