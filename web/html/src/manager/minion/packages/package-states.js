@@ -12,8 +12,8 @@ import {showErrorToastr} from "../../../components/toastr/toastr";
 import usePackageStatesApi from "./use-package-states.api";
 import type {
   ChangesMapObject,
-  InstalledPackagesObject,
-  InstalledPackage,
+  PackagesObject,
+  Package,
   OptionalValue
 } from "./package.type";
 import * as packageHelpers from "./package-utils";
@@ -31,7 +31,7 @@ const action = {
 const PackageStates = ({serverId}) => {
   const [filter, setFilter] = useState<string>("");
   const [view, setView] = useState<string>("system");
-  const [tableRows, setTableRows] = useState<Array<InstalledPackagesObject>>([]);
+  const [tableRows, setTableRows] = useState<Array<PackagesObject>>([]);
   const [changed, setChanged] = useImmer<ChangesMapObject>({});
 
   const {
@@ -79,7 +79,7 @@ const PackageStates = ({serverId}) => {
     return (event, data): void => {
       const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(data));
       const key = packageHelpers.packageStateKey(original);
-      const currentState: InstalledPackagesObject = changed[key];
+      const currentState: PackagesObject = changed[key];
       const currentPackageStateId: OptionalValue =
         (currentState !== undefined && typeof currentState.value === 'object') ? currentState.value.packageStateId : original.packageStateId;
       addChanged(
@@ -90,7 +90,7 @@ const PackageStates = ({serverId}) => {
     }
   };
 
-  function addChanged(original: InstalledPackage, newPackageStateId: OptionalValue, newVersionConstraintId: OptionalValue): void {
+  function addChanged(original: Package, newPackageStateId: OptionalValue, newVersionConstraintId: OptionalValue): void {
     const key = packageHelpers.packageStateKey(original);
     const currentState = changed[key];
     if (currentState !== undefined
@@ -136,7 +136,7 @@ const PackageStates = ({serverId}) => {
   const save = (): Promise<any> => {
     const toSave = [];
     for (const state in changed) {
-      if (typeof changed[state].value === 'object') {
+      if (changed.hasOwnProperty(state) && typeof changed[state].value === 'object') {
         toSave.push(changed[state].value)
       } else {
         console.log("Cannot save empty object.")
@@ -145,7 +145,7 @@ const PackageStates = ({serverId}) => {
     return fetchPackageStatesApi(action.SAVE, serverId, "", toSave, changed)
       .then(() => {
         setView("system");
-        setChanged(draft => {
+        setChanged(() => {
           return {};
         });
       }).catch(error => {
@@ -175,7 +175,7 @@ const PackageStates = ({serverId}) => {
   };
 
   const generateTableData = (): void => {
-    let rows: Array<InstalledPackagesObject> = [];
+    let rows: Array<PackagesObject> = [];
     if (view === "system") {
       for (const state of packageStates) {
         const key = packageHelpers.packageStateKey(state);
@@ -202,7 +202,11 @@ const PackageStates = ({serverId}) => {
       }
     } else if (view === "changes") {
       for (const state in changed) {
-        rows.push(changed[state])
+        if (changed.hasOwnProperty(state)) {
+          rows.push(changed[state])
+        } else {
+          console.log("Cannot display emtpy object.")
+        }
       }
     }
     setTableRows(rows);

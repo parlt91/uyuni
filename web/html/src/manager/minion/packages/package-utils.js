@@ -1,5 +1,5 @@
 //@flow
-import type {InstalledPackage, InstalledPackagesObject, OptionalValue, UninstalledPackage} from "./package.type";
+import type {Package, OptionalValue} from "./package.type";
 
 export const UNMANAGED = {};
 export const INSTALLED: OptionalValue = {value: 0};
@@ -8,27 +8,6 @@ export const PURGED: OptionalValue = {value: 2};
 
 export const LATEST: OptionalValue = {value: 0};
 export const ANY: OptionalValue = {value: 1};
-
-export const emptyInstalledPackagesObject: InstalledPackagesObject = {
-  original: {
-    arch: "",
-    epoch: "",
-    name: "",
-    packageStateId: {},
-    release: "",
-    version: "",
-    versionConstraintId: {}
-  },
-  value: {
-    arch: "",
-    epoch: "",
-    name: "",
-    packageStateId: {},
-    release: "",
-    version: "",
-    versionConstraintId: {}
-  }
-};
 
 export function selectValue2PackageState(value: number): OptionalValue {
   switch (value) {
@@ -72,7 +51,7 @@ export function selectValue2VersionConstraints(value: number): OptionalValue {
   }
 }
 
-export function packageStateKey(packageState: InstalledPackage | UninstalledPackage): string {
+export function packageStateKey(packageState: Package): string {
   const version: string = (typeof packageState.version === "string") ? packageState.version : "null";
   const epoch: string = (typeof packageState.epoch === "string") ? packageState.epoch : "null";
   const release: string = (typeof packageState.release === "string" && packageState.release) ? packageState.release : "null";

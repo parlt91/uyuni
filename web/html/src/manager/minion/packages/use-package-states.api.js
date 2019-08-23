@@ -4,8 +4,7 @@ import React, {useState} from "react";
 import {Utils as MessagesUtils} from "components/messages";
 import type {
   ChangesMapObject,
-  UninstalledPackage,
-  InstalledPackage,
+  Package,
 } from "./package.type";
 import * as packageHelpers from "./package-utils";
 
@@ -18,13 +17,13 @@ const action = {
 
 const usePackageStatesApi = () => {
   const [messages, setMessages] = useState("");
-  const [packageStates, setPackageStates] = useState<Array<InstalledPackage>>([]);
-  const [searchResults, setSearchResults] = useState<Array<InstalledPackage | UninstalledPackage>>([]);
+  const [packageStates, setPackageStates] = useState<Array<Package>>([]);
+  const [searchResults, setSearchResults] = useState<Array<Package>>([]);
 
   function fetchPackageStatesApi(apiAction: string,
                                  serverId: string,
                                  filter: string = "",
-                                 toSave: Array<InstalledPackage> = [],
+                                 toSave: Array<Package> = [],
                                  changed: ChangesMapObject = {}): Promise<any> {
     if (apiAction === action.SAVE) {
       console.log("Save posted");
@@ -36,7 +35,7 @@ const usePackageStatesApi = () => {
         }),
         "application/json"
       ).promise
-        .then((data: Array<InstalledPackage>) => {
+        .then((data: Array<Package>) => {
             console.log("Save success: (data in next line)");
             console.log(data);
             updateAfterSave(data, changed);
@@ -65,7 +64,7 @@ const usePackageStatesApi = () => {
       return Network.get(
         "/rhn/manager/api/states/packages?sid=" + serverId
       ).promise
-        .then((data: Array<InstalledPackage>) => {
+        .then((data: Array<Package>) => {
           console.log("Successfully got server packages.");
           updateAfterServerGetPackages(data);
         });
@@ -74,7 +73,7 @@ const usePackageStatesApi = () => {
       return Network.get(
         "/rhn/manager/api/states/packages/match?sid=" + serverId + "&target=" + filter
       ).promise
-        .then((data: Array<InstalledPackage | UninstalledPackage>) => {
+        .then((data: Array<Package>) => {
           console.log("Search Results:");
           console.log(data);
           updateAfterSearch(data);
@@ -84,7 +83,7 @@ const usePackageStatesApi = () => {
     return Promise.reject();
   }
 
-  function updateAfterSearch(serverSearchResults: Array<InstalledPackage | UninstalledPackage>): void {
+  function updateAfterSearch(serverSearchResults: Array<Package>): void {
     const newSearchResults = serverSearchResults.map((state) => {
       state.packageStateId = packageHelpers.normalizePackageState(state.packageStateId);
       state.versionConstraintId = packageHelpers.normalizePackageVersionConstraint(state.versionConstraintId);
@@ -93,7 +92,7 @@ const usePackageStatesApi = () => {
     setSearchResults(newSearchResults);
   }
 
-  function updateAfterServerGetPackages(serverPackages: Array<InstalledPackage>): void {
+  function updateAfterServerGetPackages(serverPackages: Array<Package>): void {
     const newPackageStates = serverPackages.map(state => {
       state.packageStateId = packageHelpers.normalizePackageState(state.packageStateId);
       state.versionConstraintId = packageHelpers.normalizePackageVersionConstraint(state.versionConstraintId);
@@ -102,13 +101,13 @@ const usePackageStatesApi = () => {
     setPackageStates(newPackageStates);
   }
 
-  function updateAfterSave(newServerPackages: Array<InstalledPackage>, changed: ChangesMapObject): void {
-    const newPackageStates: any = newServerPackages.map((state: InstalledPackage) => {
+  function updateAfterSave(newServerPackages: Array<Package>, changed: ChangesMapObject): void {
+    const newPackageStates: any = newServerPackages.map((state: Package) => {
       state.packageStateId = packageHelpers.normalizePackageState(state.packageStateId);
       return state;
     });
     const newSearchResults =
-      searchResults.map<InstalledPackage | UninstalledPackage>((state: InstalledPackage | UninstalledPackage) => {
+      searchResults.map<Package>((state: Package) => {
         const key = packageHelpers.packageStateKey(state);
         const tempchanged = changed[key];
         if (tempchanged !== undefined && typeof tempchanged.value === 'object') {
