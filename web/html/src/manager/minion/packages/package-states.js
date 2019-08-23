@@ -33,6 +33,7 @@ const PackageStates = ({serverId}) => {
   const [view, setView] = useState<string>("system");
   const [tableRows, setTableRows] = useState<Array<PackagesObject>>([]);
   const [changed, setChanged] = useImmer<ChangesMapObject>({});
+  const searchRef = useRef<AsyncButton>();
 
   const {
     messages, fetchPackageStatesApi, packageStates, searchResults
@@ -48,47 +49,6 @@ const PackageStates = ({serverId}) => {
   useEffect(() => {
     generateTableData();
   }, [changed, packageStates, searchResults, view]);
-
-  const handleUndo = (packageState) => {
-    return (): void => {
-      setChanged((draft: ChangesMapObject) => {
-        const key = packageHelpers.packageStateKey(packageState);
-        delete draft[key];
-      });
-    }
-  };
-
-  // Use this one only for Select's:
-  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
-  const handleStateChangeEvent = (original) => {
-    return (event, data): void => {
-      const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(data));
-      const newPackageConstraintId: OptionalValue =
-        (newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId);
-      addChanged(
-        original,
-        newPackageStateId,
-        newPackageConstraintId
-      );
-    }
-  };
-
-  // Use this one only for Select's:
-  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
-  const handleConstraintChangeEvent = (original) => {
-    return (event, data): void => {
-      const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(data));
-      const key = packageHelpers.packageStateKey(original);
-      const currentState: PackagesObject = changed[key];
-      const currentPackageStateId: OptionalValue =
-        (currentState !== undefined && typeof currentState.value === 'object') ? currentState.value.packageStateId : original.packageStateId;
-      addChanged(
-        original,
-        currentPackageStateId,
-        newPackageConstraintId
-      );
-    }
-  };
 
   function addChanged(original: Package, newPackageStateId: OptionalValue, newVersionConstraintId: OptionalValue): void {
     const key = packageHelpers.packageStateKey(original);
@@ -153,12 +113,54 @@ const PackageStates = ({serverId}) => {
       });
   };
 
-  const buttons = [
-    <AsyncButton id="save" action={save} text={t("Save")} disabled={Object.keys(changed).length === 0}
-                 key={"save"}/>,
-    <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
-                 disabled={Object.keys(changed).length > 0} key={"apply"}/>
-  ];
+  const handleUndo = (packageState) => {
+    return (): void => {
+      setChanged((draft: ChangesMapObject) => {
+        const key = packageHelpers.packageStateKey(packageState);
+        delete draft[key];
+      });
+    }
+  };
+
+  // Use this one only for Select's:
+  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
+  const handleStateChangeEvent = (original) => {
+    return (event, data): void => {
+      const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(data));
+      const newPackageConstraintId: OptionalValue =
+        (newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId);
+      addChanged(
+        original,
+        newPackageStateId,
+        newPackageConstraintId
+      );
+    }
+  };
+
+  // Use this one only for Select's:
+  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
+  const handleConstraintChangeEvent = (original) => {
+    return (event, data): void => {
+      const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(data));
+      const key = packageHelpers.packageStateKey(original);
+      const currentState: PackagesObject = changed[key];
+      const currentPackageStateId: OptionalValue =
+        (currentState !== undefined && typeof currentState.value === 'object') ? currentState.value.packageStateId : original.packageStateId;
+      addChanged(
+        original,
+        currentPackageStateId,
+        newPackageConstraintId
+      );
+    }
+  };
+
+  const onSearchChange = (event): void => {
+    setFilter(event.target.value);
+  };
+
+  const triggerSearch = (): void => {
+    searchRef.current.trigger()
+  };
 
   const search = (): Promise<any> => {
     return fetchPackageStatesApi(action.SEARCH, serverId, filter)
@@ -170,8 +172,8 @@ const PackageStates = ({serverId}) => {
       });
   };
 
-  const onSearchChange = (event): void => {
-    setFilter(event.target.value);
+  const changeTabUrl = (currentTab) => {
+    setView(currentTab);
   };
 
   const generateTableData = (): void => {
@@ -210,6 +212,84 @@ const PackageStates = ({serverId}) => {
       }
     }
     setTableRows(rows);
+  };
+
+  const buttons = [
+    <AsyncButton id="save" action={save} text={t("Save")} disabled={Object.keys(changed).length === 0}
+                 key={"save"}/>,
+    <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
+                 disabled={Object.keys(changed).length > 0} key={"apply"}/>
+  ];
+
+  const headerTabs = () => {
+    const length = Object.keys(changed).length;
+    let changesText = t('Changes');
+    if (length === 1) {
+      changesText = t('1 Change');
+    } else if (length > 1) {
+      changesText = length + ' ' + t('Changes');
+    }
+
+    return (
+      <div className="spacewalk-content-nav">
+        <ul className="nav nav-tabs">
+          <li className={view === 'search' || view === '' ? 'active' : ''}>
+            <a href='#search' onClick={() => changeTabUrl('search')}>{t('Search')}</a>
+          </li>
+          <li className={view === 'changes' ? 'active' : ''}>
+            <a href='#changes' onClick={() => changeTabUrl('changes')}>{changesText}</a>
+          </li>
+          <li className={view === 'system' ? 'active' : ''}>
+            <a href='#system' onClick={() => changeTabUrl('system')}>{t('System')}</a>
+          </li>
+        </ul>
+      </div>)
+  };
+
+  const renderSearchBar = () => {
+    return (
+      <div className={"row"}>
+        <div className={"col-md-5"}>
+          <div style={{paddingBottom: 0.7 + 'em'}}>
+            <div className="input-group">
+              <TextField id="package-search" value={filter} placeholder={t("Search package")}
+                         onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
+              <span className="input-group-btn">
+          <AsyncButton id="search" text={t("Search")} action={search} ref={searchRef} key={"searchButton"}/>
+        </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  };
+
+  const tableBody = () => {
+    const elements = [];
+    for (const row of tableRows) {
+      const currentState = row.value !== undefined ? row.value : row.original;
+
+      elements.push(
+        <tr key={currentState.name} id={currentState.name + "-row"}
+            className={row.value !== undefined ? "warning" : ""}>
+          <td key={currentState.name}>{t(currentState.name)}</td>
+          <td>
+            {renderState(row, currentState)}
+          </td>
+        </tr>
+      );
+    }
+    return (
+      <tbody className="table-content">
+      {elements.length > 0 ? elements :
+        <tr>
+          <td colSpan="2">
+            <div>{t("No package states.")}</div>
+          </td>
+        </tr>
+      }
+      </tbody>
+    );
   };
 
   const renderState = (row, currentState) => {
@@ -255,87 +335,6 @@ const PackageStates = ({serverId}) => {
         </div>
       </div>
     )
-  };
-
-  const tableBody = () => {
-    const elements = [];
-    for (const row of tableRows) {
-      const currentState = row.value !== undefined ? row.value : row.original;
-
-      elements.push(
-        <tr key={currentState.name} id={currentState.name + "-row"}
-            className={row.value !== undefined ? "warning" : ""}>
-          <td key={currentState.name}>{t(currentState.name)}</td>
-          <td>
-            {renderState(row, currentState)}
-          </td>
-        </tr>
-      );
-    }
-    return (
-      <tbody className="table-content">
-      {elements.length > 0 ? elements :
-        <tr>
-          <td colSpan="2">
-            <div>{t("No package states.")}</div>
-          </td>
-        </tr>
-      }
-      </tbody>
-    );
-  };
-
-  const searchRef = useRef<AsyncButton>();
-
-  const triggerSearch = (): void => {
-    searchRef.current.trigger()
-  };
-
-  const renderSearchBar = () => {
-    return (
-      <div className={"row"}>
-        <div className={"col-md-5"}>
-          <div style={{paddingBottom: 0.7 + 'em'}}>
-            <div className="input-group">
-              <TextField id="package-search" value={filter} placeholder={t("Search package")}
-                         onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
-              <span className="input-group-btn">
-          <AsyncButton id="search" text={t("Search")} action={search} ref={searchRef} key={"searchButton"}/>
-        </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  };
-
-  const changeTabUrl = (currentTab) => {
-    setView(currentTab);
-  };
-
-  const headerTabs = () => {
-    const length = Object.keys(changed).length;
-    let changesText = t('Changes');
-    if (length === 1) {
-      changesText = t('1 Change');
-    } else if (length > 1) {
-      changesText = length + ' ' + t('Changes');
-    }
-
-    return (
-      <div className="spacewalk-content-nav">
-        <ul className="nav nav-tabs">
-          <li className={view === 'search' || view === '' ? 'active' : ''}>
-            <a href='#search' onClick={() => changeTabUrl('search')}>{t('Search')}</a>
-          </li>
-          <li className={view === 'changes' ? 'active' : ''}>
-            <a href='#changes' onClick={() => changeTabUrl('changes')}>{changesText}</a>
-          </li>
-          <li className={view === 'system' ? 'active' : ''}>
-            <a href='#system' onClick={() => changeTabUrl('system')}>{t('System')}</a>
-          </li>
-        </ul>
-      </div>)
   };
 
   return (
