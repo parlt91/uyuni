@@ -1,15 +1,15 @@
 //@flow
 import type {InstalledPackage, InstalledPackagesObject, OptionalValue, UninstalledPackage} from "./package.type";
 
-const UNMANAGED = {};
-const INSTALLED: OptionalValue = {value: 0};
-const REMOVED: OptionalValue = {value: 1};
-const PURGED: OptionalValue = {value: 2};
+export const UNMANAGED = {};
+export const INSTALLED: OptionalValue = {value: 0};
+export const REMOVED: OptionalValue = {value: 1};
+export const PURGED: OptionalValue = {value: 2};
 
-const LATEST: OptionalValue = {value: 0};
-const ANY: OptionalValue = {value: 1};
+export const LATEST: OptionalValue = {value: 0};
+export const ANY: OptionalValue = {value: 1};
 
-const emptyInstalledPackagesObject: InstalledPackagesObject = {
+export const emptyInstalledPackagesObject: InstalledPackagesObject = {
   original: {
     arch: "",
     epoch: "",
@@ -30,7 +30,7 @@ const emptyInstalledPackagesObject: InstalledPackagesObject = {
   }
 };
 
-function selectValue2PackageState(value: number): OptionalValue {
+export function selectValue2PackageState(value: number): OptionalValue {
   switch (value) {
     case -1:
       return UNMANAGED;
@@ -45,23 +45,23 @@ function selectValue2PackageState(value: number): OptionalValue {
   }
 }
 
-function packageState2selectValue(ps: OptionalValue): number {
+export function packageState2selectValue(ps: OptionalValue): number {
   return ps.value !== undefined ? ps.value : -1;
 }
 
-function versionConstraints2selectValue(vc: OptionalValue): number {
+export function versionConstraints2selectValue(vc: OptionalValue): number {
   return vc.value === undefined ? 1 : vc.value;
 }
 
-function normalizePackageState(ps: OptionalValue): OptionalValue {
+export function normalizePackageState(ps: OptionalValue): OptionalValue {
   return selectValue2PackageState(packageState2selectValue(ps));
 }
 
-function normalizePackageVersionConstraint(vc: OptionalValue): OptionalValue {
+export function normalizePackageVersionConstraint(vc: OptionalValue): OptionalValue {
   return selectValue2VersionConstraints(versionConstraints2selectValue(vc))
 }
 
-function selectValue2VersionConstraints(value: number): OptionalValue {
+export function selectValue2VersionConstraints(value: number): OptionalValue {
   switch (value) {
     case 0:
       return LATEST;
@@ -72,26 +72,9 @@ function selectValue2VersionConstraints(value: number): OptionalValue {
   }
 }
 
-function packageStateKey(packageState: InstalledPackage | UninstalledPackage): string {
+export function packageStateKey(packageState: InstalledPackage | UninstalledPackage): string {
   const version: string = (typeof packageState.version === "string") ? packageState.version : "null";
   const epoch: string = (typeof packageState.epoch === "string") ? packageState.epoch : "null";
   const release: string = (typeof packageState.release === "string" && packageState.release) ? packageState.release : "null";
   return packageState.name + version + release + epoch + packageState.arch;
-}
-
-export {
-  UNMANAGED,
-  INSTALLED,
-  REMOVED,
-  PURGED,
-  LATEST,
-  ANY,
-  emptyInstalledPackagesObject,
-  selectValue2PackageState,
-  packageState2selectValue,
-  versionConstraints2selectValue,
-  normalizePackageState,
-  normalizePackageVersionConstraint,
-  selectValue2VersionConstraints,
-  packageStateKey
 }
