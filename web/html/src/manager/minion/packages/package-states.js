@@ -21,26 +21,22 @@ import * as packageHelpers from "./package-utils";
 const AsyncButton = Buttons.AsyncButton;
 const TextField = Fields.TextField;
 
-const action = {
-  SAVE: "Save",
-  APPLY: "Apply",
-  GETSERVERPACKAGES: "GetServerPackages",
-  SEARCH: "Search"
-};
+type PropsType = {serverId: string};
+type ViewType = "search" | "system" | "changes";
 
-const PackageStates = ({serverId}) => {
+const PackageStates = ({serverId}: PropsType) => {
   const [filter, setFilter] = useState<string>("");
-  const [view, setView] = useState<string>("system");
+  const [view, setView] = useState<ViewType>("system");
   const [tableRows, setTableRows] = useState<Array<PackagesObject>>([]);
   const [changed, setChanged] = useImmer<ChangesMapObject>({});
   const searchRef = useRef<AsyncButton>();
 
   const {
-    messages, fetchPackageStatesApi, packageStates, searchResults
+    messages, onActionPackageStatesApi, packageStates, searchResults
   } = usePackageStatesApi();
 
   useEffect(() => {
-    fetchPackageStatesApi(action.GETSERVERPACKAGES, serverId)
+    onActionPackageStatesApi({type: "GetServerPackages", serverId})
       .catch((error => {
         showErrorToastr(error, {autoHide: false});
       }));
@@ -78,7 +74,7 @@ const PackageStates = ({serverId}) => {
   }
 
   const applyPackageState = () => {
-    fetchPackageStatesApi(action.APPLY, serverId)
+    onActionPackageStatesApi({type: "Apply", serverId})
       .then(data => {
         console.log("apply action queued:" + data);
       }).catch(error => {
@@ -87,15 +83,7 @@ const PackageStates = ({serverId}) => {
   };
 
   const save = (): Promise<any> => {
-    const toSave = [];
-    for (const state in changed) {
-      if (changed.hasOwnProperty(state) && typeof changed[state].value === 'object') {
-        toSave.push(changed[state].value)
-      } else {
-        console.log("Cannot save empty object.")
-      }
-    }
-    return fetchPackageStatesApi(action.SAVE, serverId, "", toSave, changed)
+    return onActionPackageStatesApi({type: "Save", serverId, changed})
       .then(() => {
         setView("system");
         setChanged(() => {
@@ -156,7 +144,7 @@ const PackageStates = ({serverId}) => {
   };
 
   const search = (): Promise<any> => {
-    return fetchPackageStatesApi(action.SEARCH, serverId, filter)
+    return onActionPackageStatesApi({type: "Search", serverId, filter})
       .then(() => {
         setView("search");
       })
@@ -211,7 +199,7 @@ const PackageStates = ({serverId}) => {
   const buttons = [
     <AsyncButton id="save" action={save} text={t("Save")} disabled={!isApplyButtonDisabled}
                  key={"save"}/>,
-    <span {...(isApplyButtonDisabled) ? {title: t("Please always save your changes before applying!")}: {}}>
+    <span {...(isApplyButtonDisabled) ? {title: t("Please save all your changes before applying!")}: {}}>
       <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
                  disabled={isApplyButtonDisabled} key={"apply"}
       />
@@ -355,5 +343,5 @@ const PackageStates = ({serverId}) => {
   );
 };
 
-export default hot(module)(withPageWrapper(PackageStates));
+export default hot(module)(withPageWrapper<PropsType>(PackageStates));
 
