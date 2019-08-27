@@ -78,13 +78,6 @@ const PackageStates = ({serverId}) => {
   }
 
   const applyPackageState = () => {
-    if (changed.size > 0) {
-      const response = confirm(t("There are unsaved changes. Do you want to proceed ?"));
-      if (response === false) {
-        return null;
-      }
-    }
-
     fetchPackageStatesApi(action.APPLY, serverId)
       .then(data => {
         console.log("apply action queued:" + data);

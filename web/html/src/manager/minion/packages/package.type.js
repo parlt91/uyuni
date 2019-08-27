@@ -1,12 +1,7 @@
 // @flow
 
-export type ChangesMapObject = {
-  [key: string]: PackagesObject
-}
-
-export type PackagesObject = {
-  original: Package,
-  value?: Package,
+export type OptionalValue = {
+  value?: number,
 }
 
 export type Package = {
@@ -19,6 +14,11 @@ export type Package = {
   version?: string,
 }
 
-export type OptionalValue = {
-  value?: number,
+export type PackagesObject = {
+  original: Package,
+  value?: Package,
+}
+
+export type ChangesMapObject = {
+  [key: string]: PackagesObject
 }
