@@ -46,6 +46,12 @@ const PackageStates = ({serverId}: PropsType) => {
     generateTableData();
   }, [changed, packageStates, searchResults, view]);
 
+  useEffect(() => {
+    if(view === "search") {
+      triggerSearch();
+    }
+  }, [view])
+
   function addChanged(original: Package, newPackageStateId: OptionalValue, newVersionConstraintId: OptionalValue): void {
     const key = packageHelpers.packageStateKey(original);
     const currentState = changed[key];
