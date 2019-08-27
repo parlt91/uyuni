@@ -275,7 +275,11 @@ const PackageStates = ({serverId}: PropsType) => {
       {elements.length > 0 ? elements :
         <tr>
           <td colSpan="2">
-            <div>{t("No package states.")}</div>
+            {
+              view === "changes"
+                ? t("No current changes.")
+                : t("No package states.")
+            }
           </td>
         </tr>
       }
