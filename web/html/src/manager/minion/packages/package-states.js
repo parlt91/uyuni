@@ -207,11 +207,15 @@ const PackageStates = ({serverId}) => {
     setTableRows(rows);
   };
 
+  const isApplyButtonDisabled = Object.keys(changed).length > 0;
   const buttons = [
-    <AsyncButton id="save" action={save} text={t("Save")} disabled={Object.keys(changed).length === 0}
+    <AsyncButton id="save" action={save} text={t("Save")} disabled={!isApplyButtonDisabled}
                  key={"save"}/>,
-    <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
-                 disabled={Object.keys(changed).length > 0} key={"apply"}/>
+    <span {...(isApplyButtonDisabled) ? {title: t("Please always save your changes before applying!")}: {}}>
+      <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
+                 disabled={isApplyButtonDisabled} key={"apply"}
+      />
+    </span>
   ];
 
   const headerTabs = () => {
