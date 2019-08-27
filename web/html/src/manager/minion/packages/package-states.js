@@ -304,7 +304,6 @@ const PackageStates = ({serverId}) => {
         </Select>;
     }
 
-    // TODO: Just disable the button
     const key = packageHelpers.packageStateKey(currentState);
     if (changed[key] !== undefined) {
       undoButton = <button id={currentState.name + "-undo"} className="btn btn-default"
