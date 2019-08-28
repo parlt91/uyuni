@@ -3,7 +3,6 @@ import React, {useEffect, useState, useRef} from "react";
 import {useImmer} from 'use-immer';
 import Buttons from "components/buttons";
 import {InnerPanel} from 'components/panels/InnerPanel';
-import {Select} from 'components/input/Select';
 import Fields from "components/fields";
 import {Messages} from "components/messages";
 import withPageWrapper from "components/general/with-page-wrapper";
@@ -109,11 +108,9 @@ const PackageStates = ({serverId}: PropsType) => {
     }
   };
 
-  // Use this one only for Select's:
-  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const handleStateChangeEvent = (original) => {
-    return (event, data): void => {
-      const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(data));
+    return (event): void => {
+      const newPackageStateId: OptionalValue = packageHelpers.selectValue2PackageState(parseInt(event.target.value));
       const newPackageConstraintId: OptionalValue =
         (newPackageStateId === packageHelpers.INSTALLED ? packageHelpers.LATEST : original.versionConstraintId);
       addChanged(
@@ -124,11 +121,9 @@ const PackageStates = ({serverId}: PropsType) => {
     }
   };
 
-  // Use this one only for Select's:
-  // https://github.com/Semantic-Org/Semantic-UI-React/issues/638#issuecomment-252035750
   const handleConstraintChangeEvent = (original) => {
-    return (event, data): void => {
-      const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(data));
+    return (event): void => {
+      const newPackageConstraintId: OptionalValue = packageHelpers.selectValue2VersionConstraints(parseInt(event.target.value));
       const key = packageHelpers.packageStateKey(original);
       const currentState: PackagesObject = changed[key];
       const currentPackageStateId: OptionalValue =
@@ -293,13 +288,13 @@ const PackageStates = ({serverId}: PropsType) => {
 
     if (currentState.packageStateId === packageHelpers.INSTALLED) {
       versionConstraintSelect =
-        <Select id={currentState.name + "-version-constraint"}
+        <select id={currentState.name + "-version-constraint"}
                 className="form-control"
                 value={packageHelpers.versionConstraints2selectValue(currentState.versionConstraintId)}
                 onChange={handleConstraintChangeEvent(row.original)}>
           <option value="0">{t("Latest")}</option>
           <option value="1">{t("Any")}</option>
-        </Select>;
+        </select>;
     }
 
     const key = packageHelpers.packageStateKey(currentState);
@@ -311,7 +306,7 @@ const PackageStates = ({serverId}: PropsType) => {
     return (
       <div className="row">
         <div className={"col-md-3"}>
-          <Select key={currentState.name}
+          <select key={currentState.name}
                   id={currentState.name + "-pkg-state"}
                   className="form-control"
                   value={packageHelpers.packageState2selectValue(currentState.packageStateId)}
@@ -319,7 +314,7 @@ const PackageStates = ({serverId}: PropsType) => {
             <option value="-1">{t("Unmanaged")}</option>
             <option value="0">{t("Installed")}</option>
             <option value="1">{t("Removed")}</option>
-          </Select>
+          </select>
         </div>
         <div className={"col-md-3"}>
           {versionConstraintSelect}
