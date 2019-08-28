@@ -28,6 +28,10 @@ When(/^I click on "([^"]+)" in row "([^"]+)"$/) do |link, item|
   end
 end
 
+When(/^I click on the link with the target "([^"]+)"$/) do |link|
+  find(:xpath, "//a[@href='##{link}']").click
+end
+
 Then(/^the current path is "([^"]*)"$/) do |arg1|
   raise "Path #{current_path} different than #{arg1}" unless current_path == arg1
 end

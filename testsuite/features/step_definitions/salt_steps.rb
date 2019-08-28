@@ -577,6 +577,7 @@ When(/^I refresh page until I do not see "(.*?)" hostname as text$/) do |minion|
 end
 
 When(/^I list packages with "(.*?)"$/) do |str|
+  find(:xpath, "//a[@href='#search']").click
   find('input#package-search').set(str)
   find('button#search').click
 end
