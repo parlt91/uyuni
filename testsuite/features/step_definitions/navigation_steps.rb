@@ -28,7 +28,7 @@ When(/^I click on "([^"]+)" in row "([^"]+)"$/) do |link, item|
   end
 end
 
-When(/^I click on the link with the target "([^"]+)"$/) do |link|
+When(/^I click on the link with the href "([^"]+)"$/) do |link|
   find(:xpath, "//a[@href='##{link}']").click
 end
 

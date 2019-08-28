@@ -46,8 +46,8 @@ Feature: State Configuration channels
     When I am on the Systems overview page of this "sle-minion"
     And I follow "States" in the content area
     And I follow "Configuration Channels" in the content area
-    And I click on the link with the target "search"
-    And I click on "Search"
+    And I follow first "Search"
+    And I click on "Search" in element "search-row"
     Then I should see a "My State Channel" text
     And I should see a "statechannel" text
     And I should see a "statechannel2" text
@@ -75,8 +75,8 @@ Feature: State Configuration channels
     When I am on the Systems overview page of this "sle-minion"
     And I follow "States" in the content area
     And I follow "Configuration Channels" in the content area
-    And I click on the link with the target "search"
-    And I click on "Search"
+    And I follow first "Search"
+    And I click on "Search" in element "search-row"
     Then I should see a "My State Channel" text
     And I should see a "statechannel3" text
     And I check "statechannel3-cbox"

@@ -20,7 +20,7 @@ import * as packageHelpers from "./package-utils";
 const AsyncButton = Buttons.AsyncButton;
 const TextField = Fields.TextField;
 
-type PropsType = {serverId: string};
+type PropsType = { serverId: string };
 type ViewType = "search" | "system" | "changes";
 
 const PackageStates = ({serverId}: PropsType) => {
@@ -46,7 +46,7 @@ const PackageStates = ({serverId}: PropsType) => {
   }, [changed, packageStates, searchResults, view]);
 
   useEffect(() => {
-    if(view === "search") {
+    if (view === "search") {
       triggerSearch();
     }
   }, [view])
@@ -200,9 +200,9 @@ const PackageStates = ({serverId}: PropsType) => {
   const buttons = [
     <AsyncButton id="save" action={save} text={t("Save")} disabled={!isApplyButtonDisabled}
                  key={"save"}/>,
-    <span {...(isApplyButtonDisabled) ? {title: t("Please save all your changes before applying!")}: {}}>
+    <span {...(isApplyButtonDisabled) ? {title: t("Please save all your changes before applying!")} : {}}>
       <AsyncButton id="apply" action={applyPackageState} text={t("Apply changes")}
-                 disabled={isApplyButtonDisabled} key={"apply"}
+                   disabled={isApplyButtonDisabled} key={"apply"}
       />
     </span>
   ];
@@ -234,15 +234,15 @@ const PackageStates = ({serverId}: PropsType) => {
 
   const renderSearchBar = () => {
     return (
-      <div className={"row"}>
+      <div className={"row"} id={"search-row"}>
         <div className={"col-md-5"}>
           <div style={{paddingBottom: 0.7 + 'em'}}>
             <div className="input-group">
               <TextField id="package-search" value={filter} placeholder={t("Search package")}
                          onChange={onSearchChange} onPressEnter={triggerSearch} className="form-control"/>
               <span className="input-group-btn">
-          <AsyncButton id="search" text={t("Search")} action={search} ref={searchRef} key={"searchButton"}/>
-        </span>
+                <AsyncButton id="search" text={t("Search")} action={search} ref={searchRef} key={"searchButton"}/>
+              </span>
             </div>
           </div>
         </div>
