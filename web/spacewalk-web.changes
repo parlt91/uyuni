@@ -1,3 +1,4 @@
+- Provide a search box on section name for Formulas content
 - Add expand/collapse all button for formula sections
 - Disable the SPA engine for download links (bsc#1190964)
 - Fix datetime format parsing with moment (bsc#1191348)
