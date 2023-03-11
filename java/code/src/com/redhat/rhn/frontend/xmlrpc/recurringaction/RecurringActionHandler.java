@@ -18,6 +18,7 @@ package com.redhat.rhn.frontend.xmlrpc.recurringaction;
 import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.common.validator.ValidatorException;
+import com.redhat.rhn.domain.action.salt.ApplyStatesAction;
 import com.redhat.rhn.domain.recurringactions.RecurringAction;
 import com.redhat.rhn.domain.recurringactions.RecurringActionFactory;
 import com.redhat.rhn.domain.user.User;
@@ -32,6 +33,7 @@ import com.redhat.rhn.manager.recurringactions.RecurringActionManager;
 
 import com.suse.manager.api.ReadOnly;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -148,10 +150,17 @@ public class RecurringActionHandler extends BaseHandler {
                 !actionProps.containsKey("name")) {
             throw new InvalidArgsException("Incomplete action props");
         }
+
+        // TODO: Support setting type params
+        Map<String, Object> typeParams = new HashMap<>();
+        typeParams.put("action_type", "highstate");
+        typeParams.put("test", false);
+
         RecurringAction action;
         try {
             action = RecurringActionManager.createRecurringAction(
                     getEntityType((String) actionProps.get("entity_type")),
+                    typeParams,
                     ((Integer) actionProps.get("entity_id")).longValue(),
                     user
             );
@@ -161,8 +170,9 @@ public class RecurringActionHandler extends BaseHandler {
         }
         action.setName((String) actionProps.get("name"));
         action.setCronExpr((String) actionProps.get("cron_expr"));
-        if (actionProps.containsKey("test")) {
-            action.setTestMode(Boolean.parseBoolean(actionProps.get("test").toString()));
+        if (typeParams.containsKey("test")) {
+            ((ApplyStatesAction) action.getAction()).getDetails()
+                    .setTest(Boolean.parseBoolean(actionProps.get("test").toString()));
         }
         return action;
     }
@@ -206,8 +216,10 @@ public class RecurringActionHandler extends BaseHandler {
         if (actionProps.containsKey("cron_expr")) {
             action.setCronExpr((String) actionProps.get("cron_expr"));
         }
+        // TODO: Support setting type params
         if (actionProps.containsKey("test")) {
-            action.setTestMode(Boolean.parseBoolean(actionProps.get("test").toString()));
+            ((ApplyStatesAction) action.getAction()).getDetails()
+                    .setTest(Boolean.parseBoolean(actionProps.get("test").toString()));
         }
         if (actionProps.containsKey("active")) {
             action.setActive(Boolean.parseBoolean(actionProps.get("active").toString()));

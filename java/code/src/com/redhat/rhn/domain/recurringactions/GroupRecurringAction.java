@@ -58,13 +58,12 @@ public class GroupRecurringAction extends RecurringAction {
     /**
      * Constructor
      *
-     * @param testMode if action is in test mode
      * @param active if action is active
      * @param serverGroup group affiliated with the action
      * @param creator the creator User
      */
-    public GroupRecurringAction(boolean testMode, boolean active, ServerGroup serverGroup, User creator) {
-        super(testMode, active, creator);
+    public GroupRecurringAction(boolean active, ServerGroup serverGroup, User creator) {
+        super(active, creator);
         this.group = serverGroup;
     }
 

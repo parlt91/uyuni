@@ -54,13 +54,12 @@ public class OrgRecurringAction extends RecurringAction {
     /**
      * Constructor
      *
-     * @param testMode if action is in test mode
      * @param active if action is active
      * @param org organization affiliated with the action
      * @param creator the creator User
      */
-    public OrgRecurringAction(boolean testMode, boolean active, Org org, User creator) {
-        super(testMode, active, creator);
+    public OrgRecurringAction(boolean active, Org org, User creator) {
+        super(active, creator);
         this.organization = org;
     }
 

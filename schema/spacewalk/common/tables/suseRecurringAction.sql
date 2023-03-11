@@ -36,8 +36,11 @@ CREATE TABLE suseRecurringAction
                     CONSTRAINT suse_rec_action_creator_fk
                       REFERENCES web_contact(id)
                       ON DELETE CASCADE,
+  action_id         NUMERIC
+                    CONSTRAINT suse_rec_action_action_fk
+                      REFERENCES rhnAction(id)
+                      ON DELETE CASCADE NOT NULL,
   active            CHAR(1) DEFAULT ('Y') NOT NULL,
-  test_mode         CHAR(1) DEFAULT ('Y') NOT NULL,
   created           TIMESTAMP WITH TIME ZONE
                       DEFAULT (current_timestamp)
                       NOT NULL,

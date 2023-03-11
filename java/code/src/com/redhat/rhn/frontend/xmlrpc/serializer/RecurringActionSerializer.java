@@ -54,7 +54,8 @@ public class RecurringActionSerializer extends ApiResponseSerializer<RecurringAc
                 .add("cron_expr", src.getCronExpr())
                 .add("created", src.getCreated())
                 .add("creator", src.getCreator().getLogin())
-                .add("test", src.isTestMode())
+                // TODO: Support other recurring action types
+                // .add("test", src.isTestMode())
                 .add("active", src.isActive())
                 .build();
     }

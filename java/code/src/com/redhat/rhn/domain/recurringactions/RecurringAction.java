@@ -16,6 +16,7 @@
 package com.redhat.rhn.domain.recurringactions;
 
 import com.redhat.rhn.domain.BaseDomainHelper;
+import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.server.MinionServer;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.domain.user.legacy.UserImpl;
@@ -35,6 +36,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -52,9 +54,19 @@ public abstract class RecurringAction extends BaseDomainHelper {
     private Long id;
     private String name;
     private String cronExpr;
-    private boolean testMode;
     private boolean active;
     private User creator;
+    private Action action;
+
+    @OneToOne(targetEntity = Action.class)
+    @JoinColumn(name = "action_id")
+    public Action getAction() {
+        return action;
+    }
+
+    public void setAction(Action actionIn) {
+        action = actionIn;
+    }
 
     public static final String RECURRING_ACTION_PREFIX = "recurring-action-";
 
@@ -67,6 +79,13 @@ public abstract class RecurringAction extends BaseDomainHelper {
         ORG
     }
 
+    public enum ActionType {
+        HIGHSTATE,
+        CUSTOMSTATE,
+        CLM_BUILD,
+        CLM_PROMOTE
+    }
+
     /**
      * Standard constructor
      */
@@ -75,12 +94,10 @@ public abstract class RecurringAction extends BaseDomainHelper {
     /**
      * Constructor
      *
-     * @param test if action is in testMode
      * @param isActive if action is active
      * @param creatorIn the creator User
      */
-    protected RecurringAction(boolean test, boolean isActive, User creatorIn) {
-        this.testMode = test;
+    protected RecurringAction(boolean isActive, User creatorIn) {
         this.active = isActive;
         this.creator = creatorIn;
     }
@@ -186,26 +203,6 @@ public abstract class RecurringAction extends BaseDomainHelper {
      */
     public void setCronExpr(String cronExprIn) {
         cronExpr = cronExprIn;
-    }
-
-    /**
-     * Gets if action is testMode.
-     *
-     * @return testMode - if action is testMode
-     */
-    @Column(name = "test_mode")
-    @org.hibernate.annotations.Type(type = "yes_no")
-    public boolean isTestMode() {
-        return testMode;
-    }
-
-    /**
-     * Sets testMode.
-     *
-     * @param test - testMode
-     */
-    public void setTestMode(boolean test) {
-        this.testMode = test;
     }
 
     /**

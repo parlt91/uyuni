@@ -21,6 +21,10 @@ import com.redhat.rhn.common.hibernate.LookupException;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.common.validator.ValidatorException;
+import com.redhat.rhn.domain.action.Action;
+import com.redhat.rhn.domain.action.ActionFactory;
+import com.redhat.rhn.domain.action.salt.ApplyStatesAction;
+import com.redhat.rhn.domain.action.salt.ApplyStatesActionDetails;
 import com.redhat.rhn.domain.org.Org;
 import com.redhat.rhn.domain.org.OrgFactory;
 import com.redhat.rhn.domain.recurringactions.GroupRecurringAction;
@@ -36,6 +40,7 @@ import com.redhat.rhn.domain.server.ServerGroupFactory;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.EntityExistsException;
 import com.redhat.rhn.manager.EntityNotExistsException;
+import com.redhat.rhn.manager.action.ActionManager;
 import com.redhat.rhn.manager.system.ServerGroupManager;
 import com.redhat.rhn.manager.system.SystemManager;
 import com.redhat.rhn.taskomatic.TaskoQuartzHelper;
@@ -44,7 +49,9 @@ import com.redhat.rhn.taskomatic.TaskomaticApiException;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * RecurringActionManager
@@ -71,22 +78,31 @@ public class RecurringActionManager {
     /**
      * Create a minimal {@link RecurringAction} of given type.
      *
-     * @param type the Recurring Action type
+     * @param targetType the Recurring Action target type
      * @param entityId the ID of the target entity
+     * @param typeParams action type specific parameters
      * @param user the creator
      * @return the newly created {@link RecurringAction}
      */
-    public static RecurringAction createRecurringAction(RecurringAction.TargetType type, long entityId, User user) {
-        switch (type) {
+    public static RecurringAction createRecurringAction(RecurringAction.TargetType targetType,
+                                                        Map<String, Object> typeParams,
+                                                        long entityId, User user) {
+        RecurringAction recurringAction;
+        switch (targetType) {
             case MINION:
-                return createMinionRecurringAction(entityId, user);
+                recurringAction = createMinionRecurringAction(entityId, user);
+                break;
             case GROUP:
-                return createGroupRecurringAction(entityId, user);
+                recurringAction = createGroupRecurringAction(entityId, user);
+                break;
             case ORG:
-                return createOrgRecurringAction(entityId, user);
+                recurringAction = createOrgRecurringAction(entityId, user);
+                break;
             default:
                 throw new UnsupportedOperationException("type not supported");
         }
+        recurringAction.setAction(createAction(typeParams, user));
+        return recurringAction;
     }
 
     /**
@@ -99,7 +115,7 @@ public class RecurringActionManager {
     private static MinionRecurringAction createMinionRecurringAction(long minionId, User user) {
         MinionServer minion = MinionServerFactory.lookupById(minionId)
                 .orElseThrow(() -> new EntityNotExistsException(MinionServer.class, minionId));
-        MinionRecurringAction action = new MinionRecurringAction(false, true, minion, user);
+        MinionRecurringAction action = new MinionRecurringAction(true, minion, user);
         return action;
     }
 
@@ -115,7 +131,7 @@ public class RecurringActionManager {
         if (group == null) {
             throw new EntityNotExistsException(ServerGroup.class, groupId);
         }
-        GroupRecurringAction action = new GroupRecurringAction(false, true, group, user);
+        GroupRecurringAction action = new GroupRecurringAction(true, group, user);
         return action;
     }
 
@@ -131,7 +147,36 @@ public class RecurringActionManager {
         if (org == null) {
             throw new EntityNotExistsException(Org.class, orgId);
         }
-        return new OrgRecurringAction(false, true, org, user);
+        return new OrgRecurringAction(true, org, user);
+    }
+
+    private static Action createAction(Map<String, Object> typeParams, User user) {
+        Action action;
+        RecurringAction.ActionType actionType = RecurringAction.ActionType.valueOf(
+                typeParams.get("action_type").toString().toUpperCase()
+        );
+        switch (actionType) {
+            case HIGHSTATE:
+                action = ActionManager.createAction(user, ActionFactory.TYPE_APPLY_STATES,
+                        "Apply highstate", new Date());
+                ApplyStatesActionDetails highstateDetails = new ApplyStatesActionDetails();
+                highstateDetails.setActionId(action.getId());
+                ((ApplyStatesAction) action).setDetails(highstateDetails);
+                ActionFactory.save(action);
+                return action;
+            case CUSTOMSTATE:
+                action = ActionManager.createAction(user, ActionFactory.TYPE_APPLY_STATES,
+                        "Apply states [custom]", new Date());
+                ApplyStatesActionDetails stateDetails = new ApplyStatesActionDetails();
+                stateDetails.setActionId(action.getId());
+                ((ApplyStatesAction) action).setDetails(stateDetails);
+                ActionFactory.save(action);
+                return action;
+            case CLM_BUILD:
+            case CLM_PROMOTE:
+            default:
+                throw new UnsupportedOperationException("action type not supported");
+        }
     }
 
     /**

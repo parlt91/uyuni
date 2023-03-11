@@ -41,6 +41,9 @@ public class RecurringStateScheduleJson {
      */
     private String targetType;
 
+    /** The action type specific parameters */
+    private Map<String, Object> typeParams;
+
     /** Array containing Quartz information */
     private Map<String, String> cronTimes;
 
@@ -113,6 +116,13 @@ public class RecurringStateScheduleJson {
     }
 
     /**
+     * @return the type specific parameters of the action
+     */
+    public Map<String, Object> getTypeParams() {
+        return typeParams;
+    }
+
+    /**
      * @return the Array containing Quartz information
      */
     public Map<String, String> getCronTimes() {
@@ -176,6 +186,15 @@ public class RecurringStateScheduleJson {
      */
     public void setTargetType(String targetTypeIn) {
         targetType = targetTypeIn;
+    }
+
+    /**
+     * Sets the type parameters
+     *
+     * @param typeParamsIn the type specific parameters
+     */
+    public void setTypeParams(Map<String, Object> typeParamsIn) {
+        typeParams = typeParamsIn;
     }
 
     /**

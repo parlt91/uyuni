@@ -28,6 +28,8 @@ import com.redhat.rhn.common.hibernate.HibernateFactory;
 import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.common.util.RecurringEventPicker;
 import com.redhat.rhn.common.validator.ValidatorException;
+import com.redhat.rhn.domain.action.Action;
+import com.redhat.rhn.domain.action.salt.ApplyStatesAction;
 import com.redhat.rhn.domain.org.OrgFactory;
 import com.redhat.rhn.domain.recurringactions.OrgRecurringAction;
 import com.redhat.rhn.domain.recurringactions.RecurringAction;
@@ -165,10 +167,25 @@ public class RecurringActionController {
         cronTimes.put("dayOfMonth", picker.getDayOfMonth());
         cronTimes.put("dayOfWeek", picker.getDayOfWeek());
 
+        Map<String, Object> typeParams = new HashMap<>();
+        String actionType = a.getAction().getActionType().toString();
+        switch (actionType) {
+            case "states.apply : Apply states":
+                typeParams.put("action_type", "highstate");
+                typeParams.put("test", ((ApplyStatesAction) a.getAction()).getDetails().isTest());
+                break;
+            case "more action types placeholder":
+                typeParams.put("action_type", "action type");
+                break;
+            default:
+                throw new UnsupportedOperationException("Unsupported action type");
+        }
+
         json.setType(picker.getStatus());
         json.setCronTimes(cronTimes);
         json.setActive(a.isActive());
-        json.setTest(a.isTestMode());
+        // TODO: Adapt frontend to use typeParams instead
+        json.setTest((boolean) typeParams.get("test"));
         json.setTargetType(targetType.toString());
         json.setTargetId(a.getEntityId());
         json.setCreated(a.getCreated());
@@ -191,6 +208,8 @@ public class RecurringActionController {
         List<String> errors = new LinkedList<>();
 
         RecurringStateScheduleJson json = GSON.fromJson(request.body(), RecurringStateScheduleJson.class);
+        // TODO: Get type params from frontend
+        json.setTypeParams(Map.of("action_type", "highstate", "test", json.isTest()));
 
         try {
             RecurringAction action = createOrGetAction(user, json);
@@ -200,6 +219,8 @@ public class RecurringActionController {
         }
         catch (ValidatorException e) {
             errors.add(e.getMessage()); // we assume the messages are already localized
+            // We want to make sure the created rhnAction isn't persisted if the recurring action fails to validate
+            HibernateFactory.rollbackTransaction();
             Spark.halt(HttpStatus.SC_BAD_REQUEST, GSON.toJson(ResultJson.error(e.getMessage())));
         }
         catch (TaskomaticApiException e) {
@@ -214,8 +235,11 @@ public class RecurringActionController {
 
     private static RecurringAction createOrGetAction(User user, RecurringStateScheduleJson json) {
         if (json.getRecurringActionId() == null) {
-            RecurringAction.TargetType type = RecurringAction.TargetType.valueOf(json.getTargetType().toUpperCase());
-            return RecurringActionManager.createRecurringAction(type, json.getTargetId(), user);
+            RecurringAction.TargetType targetType = RecurringAction.TargetType.
+                    valueOf(json.getTargetType().toUpperCase());
+
+            return RecurringActionManager
+                    .createRecurringAction(targetType, json.getTypeParams(), json.getTargetId(), user);
         }
         else {
             return RecurringActionFactory.lookupById(json.getRecurringActionId()).orElseThrow();
@@ -232,12 +256,14 @@ public class RecurringActionController {
      */
     public static String deleteSchedule(Request request, Response response, User user) {
         long id = Long.parseLong(request.params("id"));
-        Optional<RecurringAction> action = RecurringActionFactory.lookupById(id);
-        if (action.isEmpty()) {
+        Optional<RecurringAction> recurringAction = RecurringActionFactory.lookupById(id);
+        if (recurringAction.isEmpty()) {
             Spark.halt(HttpStatus.SC_BAD_REQUEST, "Schedule with id: " + id + " does not exists");
         }
         try {
-            RecurringActionManager.deleteAndUnschedule(action.get(), user);
+            Action action = recurringAction.get().getAction();
+            RecurringActionManager.deleteAndUnschedule(recurringAction.get(), user);
+            HibernateFactory.delete(List.of(action), Action.class);
         }
         catch (TaskomaticApiException e) {
             LOG.error("Rolling back transaction because of Taskomatic exception", e);
@@ -251,7 +277,21 @@ public class RecurringActionController {
     private static void mapJsonToAction(RecurringStateScheduleJson json, RecurringAction action) {
         action.setName(json.getScheduleName());
         action.setActive(json.isActive());
-        action.setTestMode(json.isTest());
+
+        RecurringAction.ActionType actionType = RecurringAction.ActionType.valueOf(
+                json.getTypeParams().get("action_type").toString().toUpperCase());
+
+        switch (actionType) {
+            case HIGHSTATE:
+                // TODO: Get test from type params
+                ((ApplyStatesAction) action.getAction()).getDetails().setTest(json.isTest());
+                break;
+            case CUSTOMSTATE:
+                break;
+            default:
+                throw new UnsupportedOperationException("action type not supported");
+        }
+
 
         String cron = json.getCron();
         if (StringUtils.isBlank(cron)) {
