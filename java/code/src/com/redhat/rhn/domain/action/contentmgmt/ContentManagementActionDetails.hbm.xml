@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping
+PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="com.redhat.rhn.domain.action.contentmgmt.ContentManagementActionDetails"
+            table="rhnActionContentManagement">
+        <id name="id" type="long" column="id">
+            <meta attribute="scope-set">protected</meta>
+            <generator class="org.hibernate.id.enhanced.SequenceStyleGenerator">
+                <param name="sequence_name">RHN_ACT_CONTENT_MANAGEMENT_ID_SEQ</param>
+                <param name="increment_size">1</param>
+            </generator>
+        </id>
+        <many-to-one name="project" column="project_id"
+                     class="com.redhat.rhn.domain.contentmgmt.ContentProject"
+                     outer-join="true" not-null="false" update="false" />
+        <many-to-one name="env" column="env_id"
+                     class="com.redhat.rhn.domain.contentmgmt.ContentEnvironment"
+                     outer-join="true" not-null="false" update="false" />
+        <property name="created" type="timestamp" insert="false" update="false" />
+        <property name="modified" type="timestamp" insert="false" update="false" />
+        <many-to-one name="parentAction" column="action_id"
+                class="com.redhat.rhn.domain.action.Action" outer-join="true"
+                not-null="true" insert="true" update="false" />
+    </class>
+    <query name="ContentManagementActionDetails.findByActionId">
+        <![CDATA[FROM com.redhat.rhn.domain.action.contentmgmt.ContentManagementActionDetails WHERE parentAction.id = :action_id]]>
+    </query>
+</hibernate-mapping>

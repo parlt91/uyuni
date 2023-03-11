@@ -30,6 +30,7 @@ import com.redhat.rhn.domain.action.config.ConfigRevisionActionResult;
 import com.redhat.rhn.domain.action.config.ConfigUploadAction;
 import com.redhat.rhn.domain.action.config.ConfigUploadMtimeAction;
 import com.redhat.rhn.domain.action.config.DaemonConfigAction;
+import com.redhat.rhn.domain.action.contentmgmt.ContentManagementAction;
 import com.redhat.rhn.domain.action.dup.DistUpgradeAction;
 import com.redhat.rhn.domain.action.errata.ActionPackageDetails;
 import com.redhat.rhn.domain.action.errata.ErrataAction;
@@ -503,6 +504,9 @@ public class ActionFactory extends HibernateFactory {
         }
         else if (typeIn.equals(TYPE_PLAYBOOK)) {
             retval = new PlaybookAction();
+        }
+        else if (typeIn.equals(TYPE_CONTENT_MANAGEMENT)) {
+            retval = new ContentManagementAction();
         }
         else {
             retval = new Action();
@@ -1381,5 +1385,11 @@ public class ActionFactory extends HibernateFactory {
      */
     public static final ActionType TYPE_VIRTUALIZATION_GUEST_MIGRATE =
             lookupActionTypeByLabel("virt.guest_migrate");
+
+    /**
+     * The constant representing "Recurring content build or promote" [ID:523]
+     */
+    public static final ActionType TYPE_CONTENT_MANAGEMENT =
+            lookupActionTypeByLabel("content.management");
 }
 
