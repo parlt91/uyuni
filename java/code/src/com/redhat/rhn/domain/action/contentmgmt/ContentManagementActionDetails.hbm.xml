@@ -14,10 +14,10 @@ PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
         </id>
         <many-to-one name="project" column="project_id"
                      class="com.redhat.rhn.domain.contentmgmt.ContentProject"
-                     outer-join="true" not-null="false" update="false" />
+                     outer-join="true" not-null="false" />
         <many-to-one name="env" column="env_id"
                      class="com.redhat.rhn.domain.contentmgmt.ContentEnvironment"
-                     outer-join="true" not-null="false" update="false" />
+                     outer-join="true" not-null="false" />
         <property name="created" type="timestamp" insert="false" update="false" />
         <property name="modified" type="timestamp" insert="false" update="false" />
         <many-to-one name="parentAction" column="action_id"

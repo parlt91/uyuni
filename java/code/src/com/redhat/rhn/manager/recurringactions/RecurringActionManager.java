@@ -23,6 +23,8 @@ import com.redhat.rhn.common.security.PermissionException;
 import com.redhat.rhn.common.validator.ValidatorException;
 import com.redhat.rhn.domain.action.Action;
 import com.redhat.rhn.domain.action.ActionFactory;
+import com.redhat.rhn.domain.action.contentmgmt.ContentManagementAction;
+import com.redhat.rhn.domain.action.contentmgmt.ContentManagementActionDetails;
 import com.redhat.rhn.domain.action.salt.ApplyStatesAction;
 import com.redhat.rhn.domain.action.salt.ApplyStatesActionDetails;
 import com.redhat.rhn.domain.org.Org;
@@ -173,6 +175,13 @@ public class RecurringActionManager {
                 ActionFactory.save(action);
                 return action;
             case CLM_BUILD:
+                action = ActionManager.createAction(user, ActionFactory.TYPE_CONTENT_MANAGEMENT,
+                        "Recurring Content Build", new Date());
+                ContentManagementActionDetails contentDetails = new ContentManagementActionDetails();
+                contentDetails.setActionId(action.getId());
+                ((ContentManagementAction) action).setDetails(contentDetails);
+                ActionFactory.save(action);
+                return action;
             case CLM_PROMOTE:
             default:
                 throw new UnsupportedOperationException("action type not supported");

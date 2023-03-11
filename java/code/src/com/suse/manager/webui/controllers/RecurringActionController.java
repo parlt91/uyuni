@@ -29,13 +29,17 @@ import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.common.util.RecurringEventPicker;
 import com.redhat.rhn.common.validator.ValidatorException;
 import com.redhat.rhn.domain.action.Action;
+import com.redhat.rhn.domain.action.contentmgmt.ContentManagementAction;
 import com.redhat.rhn.domain.action.salt.ApplyStatesAction;
+import com.redhat.rhn.domain.contentmgmt.ContentProject;
+import com.redhat.rhn.domain.contentmgmt.ContentProjectFactory;
 import com.redhat.rhn.domain.org.OrgFactory;
 import com.redhat.rhn.domain.recurringactions.OrgRecurringAction;
 import com.redhat.rhn.domain.recurringactions.RecurringAction;
 import com.redhat.rhn.domain.recurringactions.RecurringAction.TargetType;
 import com.redhat.rhn.domain.recurringactions.RecurringActionFactory;
 import com.redhat.rhn.domain.user.User;
+import com.redhat.rhn.manager.EntityNotExistsException;
 import com.redhat.rhn.manager.recurringactions.RecurringActionManager;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
 
@@ -168,11 +172,15 @@ public class RecurringActionController {
         cronTimes.put("dayOfWeek", picker.getDayOfWeek());
 
         Map<String, Object> typeParams = new HashMap<>();
-        String actionType = a.getAction().getActionType().toString();
+        // TODO: Don't use regex
+        String actionType = a.getAction().getActionType().toString().split(" : ")[0];
         switch (actionType) {
-            case "states.apply : Apply states":
+            case "states.apply":
                 typeParams.put("action_type", "highstate");
                 typeParams.put("test", ((ApplyStatesAction) a.getAction()).getDetails().isTest());
+                break;
+            case "content.management":
+                typeParams.put("action_type", "clm_build");
                 break;
             case "more action types placeholder":
                 typeParams.put("action_type", "action type");
@@ -185,7 +193,7 @@ public class RecurringActionController {
         json.setCronTimes(cronTimes);
         json.setActive(a.isActive());
         // TODO: Adapt frontend to use typeParams instead
-        json.setTest((boolean) typeParams.get("test"));
+        json.setTest(false);
         json.setTargetType(targetType.toString());
         json.setTargetId(a.getEntityId());
         json.setCreated(a.getCreated());
@@ -209,7 +217,8 @@ public class RecurringActionController {
 
         RecurringStateScheduleJson json = GSON.fromJson(request.body(), RecurringStateScheduleJson.class);
         // TODO: Get type params from frontend
-        json.setTypeParams(Map.of("action_type", "highstate", "test", json.isTest()));
+        // json.setTypeParams(Map.of("action_type", "highstate", "test", json.isTest()));
+        json.setTypeParams(Map.of("action_type", "clm_build", "project_id", 1L));
 
         try {
             RecurringAction action = createOrGetAction(user, json);
@@ -237,7 +246,6 @@ public class RecurringActionController {
         if (json.getRecurringActionId() == null) {
             RecurringAction.TargetType targetType = RecurringAction.TargetType.
                     valueOf(json.getTargetType().toUpperCase());
-
             return RecurringActionManager
                     .createRecurringAction(targetType, json.getTypeParams(), json.getTargetId(), user);
         }
@@ -288,10 +296,17 @@ public class RecurringActionController {
                 break;
             case CUSTOMSTATE:
                 break;
+            case CLM_BUILD:
+                Long projectId = Long.parseLong(json.getTypeParams().get("project_id").toString());
+                Optional<ContentProject> project = ContentProjectFactory.lookupProjectById(projectId);
+                project.ifPresentOrElse(
+                        (p) -> ((ContentManagementAction) action.getAction()).getDetails().setProject(p),
+                        () -> {throw new EntityNotExistsException("Project does not exist");}
+                );
+                break;
             default:
                 throw new UnsupportedOperationException("action type not supported");
         }
-
 
         String cron = json.getCron();
         if (StringUtils.isBlank(cron)) {

@@ -14,10 +14,13 @@
  */
 package com.redhat.rhn.taskomatic.task;
 
+import com.redhat.rhn.domain.action.contentmgmt.ContentManagementAction;
 import com.redhat.rhn.domain.action.salt.ApplyStatesAction;
+import com.redhat.rhn.domain.contentmgmt.ContentProject;
 import com.redhat.rhn.domain.recurringactions.RecurringAction;
 import com.redhat.rhn.domain.recurringactions.RecurringActionFactory;
 import com.redhat.rhn.manager.action.ActionChainManager;
+import com.redhat.rhn.manager.contentmgmt.ContentManager;
 import com.redhat.rhn.taskomatic.TaskoXmlRpcHandler;
 import com.redhat.rhn.taskomatic.TaskomaticApiException;
 
@@ -69,13 +72,25 @@ public class RecurringStateApplyJob extends RhnJavaJob {
         List<Long> minionIds = maintenanceManager.systemIdsMaintenanceMode(action.computeMinions());
 
         try {
-            ActionChainManager.scheduleApplyStates(
-                    action.getCreator(),
-                    minionIds,
-                    Optional.of(((ApplyStatesAction) action.getAction()).getDetails().isTest()),
-                    context.getFireTime(),
-                    null
-            );
+            // TODO: Don't use regex
+            String actionType = action.getAction().getActionType().toString().split(" : ")[0];
+            switch (actionType) {
+                case "states.apply":
+                    ActionChainManager.scheduleApplyStates(
+                            action.getCreator(),
+                            minionIds,
+                            Optional.of(((ApplyStatesAction) action.getAction()).getDetails().isTest()),
+                            context.getFireTime(),
+                            null
+                    );
+                    break;
+                case "content.management":
+                    ContentManager cm = new ContentManager();
+                    ContentProject project = ((ContentManagementAction) action.getAction()).getDetails().getProject();
+                    cm.buildProject(project, Optional.of("Recurring project build of project" + project.getName()),
+                            true, action.getCreator());
+                    break;
+            }
         }
         catch (TaskomaticApiException e) {
             log.error("Error scheduling states application for recurring action {}", action, e);

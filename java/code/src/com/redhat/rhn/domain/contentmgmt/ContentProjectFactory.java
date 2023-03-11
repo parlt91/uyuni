@@ -85,6 +85,20 @@ public class ContentProjectFactory extends HibernateFactory {
     }
 
     /**
+     * Looks up a ContentProject by id
+     *
+     * @param id the content project id
+     * @return Optional with ContentProject with given id
+     */
+    public static Optional<ContentProject> lookupProjectById(Long id) {
+        CriteriaBuilder builder = getSession().getCriteriaBuilder();
+        CriteriaQuery<ContentProject> criteria = builder.createQuery(ContentProject.class);
+        Root<ContentProject> root = criteria.from(ContentProject.class);
+        criteria.where(builder.equal(root.get("id"), id));
+        return getSession().createQuery(criteria).uniqueResultOptional();
+    }
+
+    /**
      * Looks up a ContentProject by label and organization
      *
      * @param label the label
