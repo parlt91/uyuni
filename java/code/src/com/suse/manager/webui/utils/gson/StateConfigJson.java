@@ -14,6 +14,7 @@
  */
 package com.suse.manager.webui.utils.gson;
 
+import com.redhat.rhn.common.localization.LocalizationService;
 import com.redhat.rhn.domain.config.ConfigChannel;
 import com.redhat.rhn.domain.recurringactions.state.InternalState;
 import com.redhat.rhn.domain.recurringactions.state.RecurringConfigChannel;
@@ -35,6 +36,7 @@ public class StateConfigJson {
     private Long id;
     private String name;
     private String label;
+    private String description;
     private String type;
     private Integer position;
     private boolean assigned;
@@ -62,6 +64,7 @@ public class StateConfigJson {
         this.id = channelIn.getId();
         this.name = channelIn.getName();
         this.label = channelIn.getLabel();
+        this.description = channelIn.getDescription();
         this.type = channelIn.getConfigChannelType().getLabel();
         this.position = null;
         this.assigned = false;
@@ -76,6 +79,7 @@ public class StateConfigJson {
         this.id = stateIn.getId();
         this.name = stateIn.getName();
         this.label = stateIn.getLabel();
+        this.description = getDescriptionString(stateIn.getName());
         this.type = "internal_state";
         this.position = null;
         this.assigned = false;
@@ -131,6 +135,20 @@ public class StateConfigJson {
      */
     public void setLabel(String labelIn) {
         this.label = labelIn;
+    }
+
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * @param descriptionIn the description
+     */
+    public void setDescription(String descriptionIn) {
+        this.description = descriptionIn;
     }
 
     /**
@@ -191,6 +209,11 @@ public class StateConfigJson {
                         ((RecurringConfigChannel) config).getConfigChannel(), config.getPosition().intValue());
             }
         }).collect(Collectors.toList());
+    }
+
+    private static String getDescriptionString(String nameIn) {
+        String name = nameIn.replace(".", "_");
+        return LocalizationService.getInstance().getMessage("internal_state." + name);
     }
 
     @Override
