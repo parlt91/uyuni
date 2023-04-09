@@ -24,7 +24,6 @@ import com.redhat.rhn.domain.recurringactions.state.RecurringStateConfig;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -198,7 +197,7 @@ public class StateConfigJson {
      * @param configIn set of states to be included in the list
      * @return the list of {@link StateConfigJson} objects
      */
-    public static List<StateConfigJson> listOrderedStates(Set<RecurringStateConfig> configIn) {
+    public static Set<StateConfigJson> listOrderedStates(Set<RecurringStateConfig> configIn) {
         return configIn.stream().map(config -> {
             if (config instanceof RecurringInternalState) {
                 return new StateConfigJson(
@@ -208,7 +207,7 @@ public class StateConfigJson {
                 return new StateConfigJson(
                         ((RecurringConfigChannel) config).getConfigChannel(), config.getPosition().intValue());
             }
-        }).collect(Collectors.toList());
+        }).collect(Collectors.toSet());
     }
 
     private static String getDescriptionString(String nameIn) {
